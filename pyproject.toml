@@ -1,0 +1,30 @@
+[project]
+name = "grains"
+version = "0.1.0"
+description = "Structural screening of cereal seed-storage peptides against HLA-DQ2.5"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=2.0",
+    "matplotlib>=3.9",
+    "seaborn>=0.13",
+    "scipy>=1.13",
+    "requests>=2.32",
+    "biopython>=1.84",
+]
+
+[project.optional-dependencies]
+scoring = ["prodigy-prot>=2.1", "freesasa>=2.2"]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,17 @@
+# Core (already present in the Anaconda base env, pinned loosely for reproducibility)
+pandas>=2.2
+numpy>=2.0
+matplotlib>=3.9
+seaborn>=0.13
+scipy>=1.13
+requests>=2.32
+
+# Sequence / structure handling
+biopython>=1.84
+
+# Added at later checkpoints (kept here so the list is complete):
+#   prodigy-prot>=2.1      # binding-affinity scoring from a complex structure (Checkpoint 3)
+#   freesasa>=2.2          # buried surface area (Checkpoint 3)
+
+# Dev
+pytest>=8.0

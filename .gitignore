@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+build/
+dist/
+
+# Environment
+.venv/
+env/
+
+# Downloaded / derived data — regenerate with the pipeline
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Large model / structure outputs
+results/structures/
+*.cif
+*.pdb.gz
+
+# OS
+.DS_Store
+teaching/data8-project/project_datascience-Copy1.ipynb
