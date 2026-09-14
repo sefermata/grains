@@ -11,7 +11,8 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
 
 **Goal:** every input is downloaded, curated, cited, and sanity-checked.
 
-- [ ] Install Xcode Command Line Tools (`xcode-select --install`), then `git init`, first commit.
+- [x] `git init`, first commit. (2026-09-14 — used GitHub Desktop's bundled git instead of
+      Xcode Command Line Tools; see README.md for why and how.)
 - [ ] `pip install -r requirements.txt`; `pytest` passes.
 - [ ] `python -m grains.proteomes` — proteomes for all 16 grains in `data/raw/`,
       `data/processed/proteome_index.csv` written. Note which grains returned few/no hits.

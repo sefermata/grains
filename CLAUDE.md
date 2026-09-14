@@ -42,8 +42,11 @@ or rely on `pyproject.toml`'s `pythonpath`.
 **State (2026-09-10):** Checkpoint 1 in progress. Reference data built; proteome fetcher run
 (1,595 proteins; coverage gap for rye/teff/pearl-millet/amaranth is real, note it, don't hide
 it). The 4 immunodominant DQ2.5 epitope cores (glia-α1a/α2/ω1/ω2) are verified exact against
-Sollid 2012; the rest still need checking. No 3D/modeling work started. **`git` is not
-initialized** — needs Xcode Command Line Tools (`xcode-select --install`).
+Sollid 2012; the rest still need checking. No 3D/modeling work started. **`git` is initialized**
+(2026-09-14, initial commit `d3e9ba8`) — this Mac has no Xcode Command Line Tools and is
+low on disk space, so git commands use GitHub Desktop's bundled binary instead:
+`/Applications/GitHub Desktop.app/Contents/Resources/app/git/bin/git`. Alias or invoke by
+full path; the system `git` at `/usr/bin/git` still just triggers the CLT install prompt.
 
 ## 2. Teaching project — `teaching/data8-project/`
 
