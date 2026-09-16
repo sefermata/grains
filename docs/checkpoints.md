@@ -13,11 +13,17 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
 
 - [x] `git init`, first commit. (2026-09-14 — used GitHub Desktop's bundled git instead of
       Xcode Command Line Tools; see README.md for why and how.)
-- [ ] `pip install -r requirements.txt`; `pytest` passes.
-- [ ] `python -m grains.proteomes` — proteomes for all 16 grains in `data/raw/`,
-      `data/processed/proteome_index.csv` written. Note which grains returned few/no hits.
-- [ ] Verify **every** row of `data/reference/peptides.csv` against Sollid 2012/2020 + IEDB
+- [x] `pip install -r requirements.txt`; `pytest` passes. (biopython 1.88 installed, 9/9 tests
+      green as of 2026-09-16.)
+- [x] `python -m grains.proteomes` — proteomes for all 16 grains in `data/raw/`,
+      `data/processed/proteome_index.csv` written. Coverage gap for rye/teff/pearl-millet/
+      amaranth confirmed real (public UniProt under-annotation) — noted, not hidden.
+- [~] Verify **every** row of `data/reference/peptides.csv` against Sollid 2012/2020 + IEDB
       (see `data/reference/peptides_NOTES.md`). Add `iedb_id` and UniProt accession + range.
+      **2026-09-16: name/core/restriction confirmed for all 17 rows against Sollid 2012**
+      (caught and fixed two wrong PMIDs along the way). Still open: `iedb_id` column, UniProt
+      accession+range column, the Sollid 2020 update, and a direct Tye-Din 2010 table check for
+      N01–N03 (currently verified by derivation only).
 - [ ] Confirm the PDB target list (`data/reference/pdb_structures.md`); write
       `data/processed/targets.csv`. Download the chosen validation structure (`4OZF` or `1S9V`).
 - [ ] Render one crystal structure (ChimeraX / PyMOL / nglview) showing a gluten peptide in

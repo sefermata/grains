@@ -3,6 +3,39 @@
 `peptides.csv` is a **working draft**. Before Checkpoint 1 is "done", every row's `verified`
 field must read `yes`, cross-checked against a primary source.
 
+## Status as of 2026-09-16
+
+All 17 rows now read `verified=yes` — **step 1 of the checklist below** (canonical name,
+core_9mer, restriction confirmed against Sollid 2012 Table 2, PMC3349865) is done for every
+row. Steps 2–3 (IEDB epitope ID, UniProt accession + residue range) are **still open** —
+`iedb_id` and UniProt-accession columns don't exist in `peptides.csv` yet. Don't read
+`verified=yes` as "fully done per this checklist"; it means "name/core/restriction confirmed
+against a primary source."
+
+What changed in this pass:
+- E05–E09, E11, E12 (`partial`/`no`) — core_9mer confirmed exact against Sollid 2012 Table 2
+  for all of them, including E08 (gamma-gliadin) which was flagged as an unverified risk.
+- E10 — core confirmed, but the table extraction rendered the name as "DQ8-glia-γ1a" (with an
+  "a" suffix) vs this row's "DQ8-glia-g1". Not renamed without a closer look at the primary
+  text — flagged in the row's notes.
+- N01–N03 (native pairs) — confirmed by reverting the single validated TG2 site (E→Q) in the
+  already-Sollid-confirmed deamidated core; **not** independently checked against the
+  Tye-Din 2010 table, which has no open-access full text. Weaker verification than the others
+  — algebraically consistent, not table-cross-checked.
+- C01/C02 (33-mer) — sequence cross-checked against a literature-quoted native 33-mer; C01's
+  triple Q→E pattern matches the expected embedded epitope cores.
+- **Two citation errors caught and fixed:** C01/C02 cited PMID `12923521` for Shan et al. 2002
+  — that PMID actually belongs to an unrelated orthodontics-ethics paper; corrected to
+  `12351792` (confirmed via PubMed eutils). E11/E12 cited PMID `20951824` for the avenin
+  source — that PMID belongs to an unrelated nitric-oxide/brain-perfusion paper; corrected to
+  `15526039` (Arentz-Hansen et al. 2004, PLoS Medicine — the paper Sollid 2012 itself cites for
+  these two epitopes, alongside Vader et al. 2003 Gastroenterology, PMID `14517794`).
+
+Still open for Checkpoint 1: add `iedb_id` column (checklist step 2), add UniProt accession +
+residue range column (checklist step 3), resolve the E10 name-suffix question, and ideally
+find an accessible copy of Tye-Din 2010 to table-check N01–N03 directly rather than by
+derivation.
+
 ## What each column means
 
 - `core_9mer` — the 9-residue segment that sits in the HLA groove (P1–P9). For DQ2.5 the
@@ -24,10 +57,8 @@ field must read `yes`, cross-checked against a primary source.
    grain (the `proteomes.py` output). Record the UniProt accession + residue range.
 4. Confirm the deamidation positions: which Q became E, and that a real TG2 QxP-type motif
    supports it (see `deamidation` rules to be added at Checkpoint 4).
-5. Rows currently `verified = no` — treat as unverified leads, not data:
-   E08 (glia-γ1), E10 (DQ8-glia-γ1), E11/E12 (avenin), N03.
-6. Rows `verified = partial` — sequence is close to what is widely reproduced in reviews but
-   has not been checked against the primary table in this repo yet.
+5. ~~Rows currently `verified = no`~~ — resolved 2026-09-16, see "Status" section above.
+6. ~~Rows `verified = partial`~~ — resolved 2026-09-16, see "Status" section above.
 
 ## Negative / control peptides (added at Checkpoint 3, not here)
 
@@ -42,9 +73,16 @@ epitope. They will be:
 
 ## Sources
 
-- PMID 22371225 — Sollid et al., gluten epitope nomenclature, *Immunogenetics* 2012
-- PMID 31735986 — Sollid et al., nomenclature update, *Immunogenetics* 2020
+- PMID 22371225 — Sollid et al., gluten epitope nomenclature, *Immunogenetics* 2012 (PMC3349865,
+  open access — used directly for the 2026-09-16 verification pass)
+- PMID 31735986 — Sollid et al., nomenclature update, *Immunogenetics* 2020 (not yet consulted
+  directly — the 2026-09-16 pass used the 2012 paper only)
 - PMID 20679571 — Tye-Din et al., comprehensive T-cell epitope hierarchy, *Sci Transl Med* 2010
-- PMID 12923521 — Shan et al., structural basis for gluten intolerance (the 33-mer), *Science* 2002
-- PMID 20951824 — placeholder for the avenin/oat epitope source; replace with the correct PMID
-  (Vader et al. 2003 *Gastroenterology*, or Tye-Din et al. 2011) during verification
+  (no open-access full text found; N01–N03 verified by derivation instead, see "Status" above)
+- PMID 12351792 — Shan et al., structural basis for gluten intolerance (the 33-mer), *Science*
+  2002. **Corrected 2026-09-16** — was previously miscited as PMID 12923521, which belongs to
+  an unrelated orthodontics-ethics article.
+- PMID 15526039 — Arentz-Hansen et al., the molecular basis for oat intolerance, *PLoS Medicine*
+  2004. **Corrected 2026-09-16** — was previously miscited as PMID 20951824, which belongs to
+  an unrelated nitric-oxide/brain-perfusion article. Sollid 2012 cites this paper (and Vader et
+  al. 2003 *Gastroenterology*, PMID 14517794) for DQ2.5-ave-1a/1b.
