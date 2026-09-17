@@ -79,7 +79,6 @@ The project has six parts. Each one ends with something concrete you can check.
 | **1. Sequence to numbers** | Write functions that turn a protein string into numbers (how much of it is proline, how much is glutamine) | functions, `apply` |
 | **2. Exploration** | Compare gluten vs non-gluten grains with a histogram and a scatter plot; find which "safe" grains look suspicious | grouped visualization |
 | **3. Is the difference real?** | Run a permutation test on the gap between the two groups | hypothesis testing |
-| **4. How big is it?** | Put a confidence interval on that gap | the bootstrap |
 | **5. A sharper feature** | Count a *repeating pattern* instead of raw amounts, and watch the borderline grains separate | more string logic |
 | **6. Prediction** | Build a k-nearest-neighbors classifier, test it honestly on held-out data, and see where it fails | classification |
 
@@ -308,22 +307,22 @@ def part0(track: str, version: str) -> list[dict]:
 
     if track == "ds":
         cells.append(md("Load the data into a `Table` and look at the first few rows."))
-        cells.append(code("grains = Table.read_table('data/grains.csv')\ngrains.show(3)"))
+        cells.append(code("grains = Table.read_table('data/grains.csv')\ngrains.show(8)"))
     else:
         cells.append(md("Load the data into a `DataFrame` and look at the first few rows."))
-        cells.append(code("grains = pd.read_csv('data/grains.csv')\ngrains.head(3)"))
+        cells.append(code("grains = pd.read_csv('data/grains.csv')\ngrains.head(8)"))
 
     cells.append(md(r"""
         ### What each column means
 
         | column | what it is | do we compute from it? |
         |---|---|---|
-        | `seq_id` | our label for the row (`S001`, `S002`, ...) | no — it just lets us point at one specific protein |
-        | `grain` | the grain this protein comes from (`wheat`, `rice`, ...) | used for grouping, and for error analysis in Part 6 |
-        | `gluten` | `yes` if the grain is wheat, barley, or rye; otherwise `no` | **yes — this is the label we try to predict** |
-        | `protein_name` | the name the source database gives this protein | no calculations from it. In Part 6 it helps explain *which* proteins the model gets wrong. Ignore it until then. |
-        | `accession` | this protein's ID in **UniProt**, a public protein database | no — provenance only. Paste it into uniprot.org to see the original record. |
-        | `sequence` | the protein itself: a string of capital letters, one per amino acid | **yes — every number we build comes from this column** |
+        | `seq_id` | our label for the row (`S001`, `S002`, ...) | No — it just lets us point at one specific protein. |
+        | `grain` | the grain this protein comes from (`wheat`, `rice`, ...) | Used for grouping, and for error analysis in Part 6. |
+        | `gluten` | `yes` if the grain is wheat, barley, or rye; otherwise `no` | **Yes — this is the label we try to predict.** |
+        | `protein_name` | the name the source database gives this protein | No calculations from it. In Part 6 it helps explain *which* proteins the model gets wrong. Ignore it until then. |
+        | `accession` | this protein's ID in **UniProt**, a public protein database | No — it's *provenance* only (a record of where the data came from, so you could trace it back). Paste it into uniprot.org to see the original record. |
+        | `sequence` | the protein itself: a string of capital letters, one per amino acid | **Yes — every number we build comes from this column.** |
 
         You'll see the same `protein_name` (and the same `grain`) on many rows. That's
         expected: a grain has many storage-protein genes and many database entries, and
@@ -352,8 +351,8 @@ def part0(track: str, version: str) -> list[dict]:
         ### Question 0.2 · 2 pt
 
         Each row is one protein, so counting rows per grain tells you how many proteins we
-        have for each. Build `per_grain`: the count of proteins for every `grain`, largest
-        first.
+        have for each. Build a 2-column table, `per_grain`: one column is `grain`, the other
+        is the count of proteins for that grain, sorted so the largest count comes first.
     """))
     if track == "ds":
         cells.append(solvable(
@@ -501,11 +500,14 @@ def part1(track: str, version: str) -> list[dict]:
     cells.append(md(r"""
         ### Question 1.2 · 3 pt
 
-        Write `aa_fraction(seq, aa)` = the fraction of `seq` that is the character `aa`
-        (a number between 0 and 1) — that's `count_aa` divided by the length of `seq`.
+        Write `aa_fraction(seq, aa)`: the fraction of `seq` that is the character `aa` (a
+        number between 0 and 1). Reuse `count_aa` rather than re-writing the counting logic.
 
-        Then `proline_fraction(seq)` and `glutamine_fraction(seq)` are just `aa_fraction`
-        with the letter filled in: `'P'` for proline, `'Q'` for glutamine.
+        Then write `proline_fraction(seq)` and `glutamine_fraction(seq)` by calling
+        `aa_fraction` with the right letter for each amino acid.
+
+        > **Note:** string comparisons in Python are case-sensitive — `'P'` and `'p'` are
+        > different characters, so double-check which case the `sequence` column actually uses.
     """))
     cells.append(solvable(
         version,
@@ -548,9 +550,10 @@ def part1(track: str, version: str) -> list[dict]:
             (= `p_frac + q_frac`), computed from the `sequence` column with the functions
             you just wrote.
 
-            **Hint:** `with_columns` returns a *new* table — write
-            `grains = grains.with_columns(...)`, or the columns won't stick. Use
-            `grains.apply(proline_fraction, 'sequence')` to run a function down the column.
+            **Hints:** `with_columns` returns a *new* table rather than changing `grains` in
+            place — make sure the result actually gets saved back to `grains`. A `Table` also
+            has an `apply` method that runs a function down every value in one column; look
+            it up in the `datascience` docs if you haven't used it yet.
         """))
         cells.append(solvable(
             version,
@@ -583,9 +586,10 @@ def part1(track: str, version: str) -> list[dict]:
             (= `p_frac + q_frac`), computed from the `sequence` column with the functions
             you just wrote.
 
-            **Hint:** `grains['p_frac'] = grains['sequence'].apply(proline_fraction)` runs
-            the function down the column and stores the result. (No `grains = ...` needed
-            here — assigning into `grains['p_frac']` changes it in place.)
+            **Hints:** a pandas `Series` (a single column) has an `apply` method that runs a
+            function on every value in it. Assigning to `grains['a_new_column']` adds that
+            column in place — no reassigning `grains` needed here, unlike the `datascience`
+            track.
         """))
         cells.append(solvable(
             version,

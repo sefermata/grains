@@ -4,8 +4,18 @@
 
 Students build, from scratch, a pipeline that predicts whether a seed-storage protein comes
 from a gluten grain (wheat / barley / rye) using only its amino-acid sequence. The project
-walks from "turn a string into features" through a permutation test and a bootstrap interval
-to a hand-built k-nearest-neighbors classifier with error analysis and a held-out mystery set.
+walks from "turn a string into features" through a permutation test to a hand-built
+k-nearest-neighbors classifier with error analysis and a held-out mystery set.
+
+**Scope decision, 2026-09-16:** Part 4 (bootstrap CI) is cut, to fit a month of build/review
+time with room left for proofreading. The course already drills bootstrap elsewhere, and
+cutting it doesn't touch the core narrative — Part 3 already covers "is this real," and
+Parts 5-6 (the two heaviest, most novel parts) are untouched. Total is 92 points (was 100 —
+the doc previously stated 105 for the full total and 55 for Parts 5-6, both arithmetic errors
+against the parts' own [bracket] values; corrected here).
+Also decided: a short "now write it in pandas" translation exercise gets added in **Part 1**
+and **Part 6** only (not all six parts) — enough to teach the transferable skill without
+doubling the content to write and review. See the note at each of those parts below.
 
 It is a scoped-down version of a real research project (structural modeling of gluten
 peptides against the HLA-DQ2.5 immune receptor). Students see the "just count the amino
@@ -49,8 +59,10 @@ file and replace the calls with `grader.check("qN_M")`.
 | Use | Parts | Time |
 |---|---|---|
 | One long lab | 0–3 | 2–3 h |
-| Checkpoint (due mid-project) | 0–4 | first week |
-| Full project | 0–6 | 8–12 h over ~2 weeks |
+| Checkpoint (due mid-project) | 0–3, 5 | first week |
+| Full project | 0–3, 5–6 | 8–12 h over ~2 weeks |
+
+(Part 4 cut, 2026-09-16 — see the section below.)
 
 ## Dataset notes
 
@@ -88,8 +100,8 @@ file and replace the calls with `grader.check("qN_M")`.
 
 # The six parts, question by question
 
-Point values in **[brackets]**. Total **105**, prediction-heavy by design: Parts 5–6 = 55.
-(Part 4 is the trim point if you need to get back to 100 or shorten the project.)
+Point values in **[brackets]**. Original total (Parts 0-6) was **100**, prediction-heavy by
+design: Parts 5-6 = 50. **Part 4 is cut** (see Scope decision above) — remaining total **92**.
 
 ## Part 0 — Orientation  **[5]**
 
@@ -121,6 +133,12 @@ Common mistakes: using Python's `str.count` is fine here (non-overlapping is OK 
 characters); forgetting to divide by length; adding columns without reassigning the table in
 the `datascience` track (`t = t.with_columns(...)`).
 
+**Planned addition (2026-09-16, not yet built):** a short "now write it in pandas" exercise
+after Q1.3 — students who did this part in the `datascience` track redo the column-adding
+step in pandas (or vice versa for the `pandas` track), pointed at `datascience_vs_pandas.md`.
+Goal: the transferable skill of recognizing the same operation across tools, kept small (one
+exercise, not a parallel Part 1).
+
 ## Part 2 — Exploration  **[13]**
 
 - **Q2.1 [4]** Overlaid histogram of `pq_frac`, one curve per `gluten` value. Reasonable bins.
@@ -151,16 +169,20 @@ Common mistakes: shuffling `pq_frac` instead of the label (equivalent here, but 
 logic); recomputing against the *shuffled* group sizes wrong; using `np.random.shuffle`
 in place on a shared array without copying.
 
-## Part 4 — How big is the difference?  **[8]**
+## Part 4 — CUT (2026-09-16)
 
-Deliberately short — the course already drills bootstrap.
+Was "How big is the difference?" — a bootstrap confidence interval on the `pq_frac` gap
+(**[8]**: Q4.1 bootstrap, Q4.2 the 95% CI, Q4.3 written contrast with Part 3). Cut for build/
+review time; the course already drills bootstrap elsewhere and this didn't carry unique
+concept weight. Kept here, struck through, in case it's worth restoring later — the original
+three questions are simple to re-add if time allows:
 
-- **Q4.1 [4]** Bootstrap the difference in mean `pq_frac` (resample rows with replacement,
-  ≥ 5000 times).
-- **Q4.2 [2]** Report a 95% confidence interval from the 2.5th / 97.5th percentiles.
-- **Q4.3 [2]** *(written)* One sentence: how is the question in Part 4 different from Part 3?
+- ~~**Q4.1 [4]** Bootstrap the difference in mean `pq_frac` (resample rows with replacement,
+  ≥ 5000 times).~~
+- ~~**Q4.2 [2]** Report a 95% confidence interval from the 2.5th / 97.5th percentiles.~~
+- ~~**Q4.3 [2]** *(written)* One sentence: how is the question in Part 4 different from Part 3?
   *Answer: Part 3 asks "could this be nothing?"; Part 4 asks "given it's something, how large,
-  with what uncertainty?"*
+  with what uncertainty?"*~~
 
 ## Part 5 — A sharper feature  **[15]**
 
@@ -184,6 +206,14 @@ Deliberately short — the course already drills bootstrap.
 > features from bad. The **mystery set** — deliberately made of atypical proteins (short
 > HMW/D glutenins, oat avenins) — is where feature choice and feature scaling actually show.
 > Students should come away trusting the mystery-set number over the test-set number.
+
+**Planned addition (2026-09-16, not yet built):** after the hand-built k-NN is working
+(6b/6c), a short exercise re-does the same classification with the *other* track's tools —
+`datascience`-track students try `pandas` + `sklearn.neighbors.KNeighborsClassifier`, and
+vice versa — comparing against their from-scratch accuracy. Ties together the existing
+objective 8 (recognizing `datascience`/`pandas` as the same operations, and scikit-learn as
+the "in practice" version of the hand-built classifier) into one concrete step instead of
+leaving it as an abstract learning goal.
 
 ### 6a. Setup
 
