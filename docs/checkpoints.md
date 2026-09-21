@@ -50,12 +50,23 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
 
 **Goal:** show the modeling approach can reproduce a known complex.
 
-- [ ] `fetch_hla.py` — extract DQA1*05:01 + DQB1*02:01 groove+Ig domains → `hla_dq25.fasta`.
+- [x] `fetch_hla.py` — extract DQA1*05:01 + DQB1*02:01 groove+Ig domains → `hla_dq25.fasta`.
+      **2026-09-21:** reads chains straight from `1S9V.pdb`'s `SEQRES` records (the crystallized
+      construct already *is* the groove+Ig ectodomain, no domain-boundary guessing needed) —
+      not from full-length UniProt entries. Regression-tested against a real 7-residue disordered
+      loop gap in chain B that a naive CA-atom walk would silently splice across.
 - [ ] Submit the validation peptide + HLA chains to AlphaFold Server; retrieve the model.
 - [ ] Superpose model on the crystal structure (Biopython `Superimposer` or ChimeraX
       `matchmaker`); report backbone RMSD for (a) whole complex, (b) peptide core.
 - [ ] Try the CPU-only homology route as a cross-check (PANDORA) on the same peptide.
 - [ ] Write `src/grains/modeling.py` wrapping "sequence(s) in → model file out" for both routes.
+
+**AlphaFold Server Terms-of-Service constraint (found 2026-09-21, see Checkpoint 3):**
+AlphaFold Server output may be compared to the crystal structure by RMSD here — that's a pure
+geometric check, not a binding prediction, so it's fine. Its output must **never** be piped into
+PRODIGY or any other binding/affinity scorer (that's a prohibited use — see Checkpoint 3). Keep
+this checkpoint's AlphaFold Server usage scoped to exactly that: one validation structure, one
+RMSD comparison, nothing downstream of it feeds a binding score.
 
 **Present:** overlay figure (model vs crystal) + RMSD numbers + a short method paragraph.
 *If AlphaFold Server access is slow:* present the PANDORA result and the submission plan.
@@ -66,9 +77,21 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
 
 **Goal:** every panel peptide modeled and scored.
 
+**Constraint, locked in 2026-09-21 (AlphaFold Server Prohibited Use Policy, clause 2):**
+AlphaFold Server output must not be used "in connection with any automated system that predicts
+the binding or interaction of the protein with ligands or peptides" — PRODIGY is exactly that
+kind of system (protein–peptide binding-affinity prediction), same category as the policy's own
+named examples (Glide, AutoDock). So: **every one of the ~40-50 panel complexes that will be
+PRODIGY-scored must be modeled with PANDORA (CPU-only, MODELLER-based — a separate, unrestricted
+pipeline), never with AlphaFold Server.** AlphaFold Server stays confined to the one-time
+Checkpoint 2 validation structure, whose only downstream use is an RMSD comparison — never a
+PRODIGY input. If PANDORA's accuracy on the validation peptide (Checkpoint 2) is too poor to
+trust for the full panel, that's a real limitation to state plainly in the report — not a reason
+to reach for AlphaFold Server here instead.
+
 - [ ] `build_controls.py` — length- and P/Q-matched control peptides from zein / kafirin /
       orzenin / avenin + a non-epitope gluten stretch → `data/processed/controls.csv`.
-- [ ] Model toxic panel + controls + native pairs (~40–50 complexes).
+- [ ] Model toxic panel + controls + native pairs (~40–50 complexes) **with PANDORA**.
 - [ ] `src/grains/scoring.py` — per-complex: interface contact count, buried surface area
       (freesasa), PRODIGY ΔG / Kd, interface PAE + peptide pLDDT, anchor-pocket occupancy.
 - [ ] `data/processed/scores.csv`; first comparison plot (toxic vs safe vs intermediate).
