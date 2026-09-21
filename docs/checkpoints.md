@@ -100,6 +100,13 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
 - [ ] `report.md` (2–3 pp): question, methods, results, limitations, "what I'd do next".
 - [ ] README updated with results summary + a headline figure.
 - [ ] Repo tidy: docstrings, `pytest` green, `requirements.txt` complete, LICENSE.
+- [ ] Replace `results/figures/1S9V_dq25_groove.png` (Checkpoint 1's quick Biopython
+      CA-backbone-trace render) with a real ChimeraX or PyMOL cartoon: helices as ribbons,
+      beta-sheet as arrows, peptide as sticks colored by atom, viewed straight down into the
+      groove. The current figure only shows the peptide is roughly in the right place; it
+      can't show anchor-pocket chemistry (the deamidated Glu side chains dropping into the
+      DQ2.5 pockets), which is the actual story worth a headline figure. Needs disk space
+      freed up first (no Xcode CLT / low disk currently blocks a ChimeraX/PyMOL install).
 - [ ] Optional stretch: a second HLA allele (DQ8), or ancient-wheat (einkorn/emmer) prolamins.
 
 **Present:** the repo + report as the portfolio piece.
