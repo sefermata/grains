@@ -16,6 +16,9 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+# targets.csv is hand-verified against rcsb.org (Checkpoint 1), not mechanically
+# regenerated — keep it in version control like the other reference/ verification work.
+!data/processed/targets.csv
 
 # Large model / structure outputs
 results/structures/

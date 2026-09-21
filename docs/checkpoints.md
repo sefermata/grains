@@ -24,10 +24,22 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
       (caught and fixed two wrong PMIDs along the way). Still open: `iedb_id` column, UniProt
       accession+range column, the Sollid 2020 update, and a direct Tye-Din 2010 table check for
       N01–N03 (currently verified by derivation only).
-- [ ] Confirm the PDB target list (`data/reference/pdb_structures.md`); write
+- [x] Confirm the PDB target list (`data/reference/pdb_structures.md`); write
       `data/processed/targets.csv`. Download the chosen validation structure (`4OZF` or `1S9V`).
-- [ ] Render one crystal structure (ChimeraX / PyMOL / nglview) showing a gluten peptide in
-      the DQ2.5 groove — save to `results/figures/`.
+      **2026-09-21: confirmed all 8 candidate PDB IDs against rcsb.org.** Two corrections to
+      the from-memory list: `4OZF/4OZG/4OZH/4OZI` are all ternary (TCR-bound), not binary as
+      guessed, so `1S9V` — not `4OZF` — is the Checkpoint 2 validation structure; and `4D0N`
+      isn't a gluten/DQ structure at all (wrong ID) while `2NNA` turned out to genuinely be a
+      DQ8+gluten binary structure (previously guessed as an unrelated insulin reference).
+      Bonus: by exact sequence match, `1S9V`'s peptide = panel epitope E01 and `2NNA`'s = E09,
+      so validation directly checks panel peptides, not off-panel ones. `1S9V.pdb` and
+      `2NNA.pdb` downloaded to `data/raw/pdb/`.
+- [x] Render one crystal structure (ChimeraX / PyMOL / nglview) showing a gluten peptide in
+      the DQ2.5 groove — save to `results/figures/`. **2026-09-21: no ChimeraX/PyMOL install**
+      (disk-constrained, see README) — used a Biopython CA-backbone-trace rendering instead
+      (`src/grains/render_structure.py` → `results/figures/1S9V_dq25_groove.png`). Good enough
+      to show the peptide nestled in the groove; a nicer cartoon render is a Checkpoint 5 polish
+      item if disk space frees up.
 
 **Present:** README + `grains.csv` + verified `peptides.csv` + the rendered structure, with a
 2–3 sentence statement of the question and the validation logic.

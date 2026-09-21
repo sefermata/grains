@@ -1,0 +1,8 @@
+pdb_id,allele,peptide_seq,peptide_epitope_id,resolution_A,has_TCR,reference_pmid,notes
+1S9V,DQ2.5,LQPFPQPELPY,E01,2.2,no,15020763,"CHOSEN Checkpoint 2 validation structure. Binary (no TCR). Peptide chain C/F matches E01 (DQ2.5-glia-a1a) core PFPQPELPY exactly. Kim et al. 2004 PNAS."
+2NNA,DQ8,QQYPSGEGSFQPSQENPQ,E09,2.1,no,17629515,"Binary DQ8 validation candidate (doc previously mis-described this as non-gluten insulin B -- confirmed on RCSB 2026-09-21 it IS a DQ8+gluten complex). Peptide contains E09 (DQ8-glia-a1) core EGSFQPSQE exactly. Henderson et al. 2007 Immunity."
+4OZF,DQ2.5,APQPELPYPQP,E02,2.7,yes,24777060,"Ternary (TCR JR5.1). Out of scope for peptide-MHC modeling (see pdb_structures.md); kept for record. C-terminal PGS in the deposited peptide chain is a construct tag, not native gliadin. Petersen et al. 2014 NSMB."
+4OZG,DQ2.5,APQPELPYPQP,E02,3.0,yes,24777060,"Ternary (TCR d2). Same peptide/epitope as 4OZF, 2 copies in ASU. Out of scope for modeling."
+4OZH,DQ2.5,APQPELPYPQP,E02,2.8,yes,24777060,"Ternary (TCR s16). Same peptide/epitope as 4OZF. Out of scope for modeling."
+4OZI,DQ2.5,QPFPQPELPY,E01,3.2,yes,24777060,"Ternary (TCR s2). RCSB structure-summary text called this alpha2; the actual deposited peptide sequence matches E01 (glia-a1a) core PFPQPELPY exactly, not alpha2 -- verify epitope assignment from sequence, not from summary text, before citing. Out of scope for modeling."
+4GG6,DQ8,QQYPSGEGSFQPSQENPQ,E09,3.2,yes,23063329,"Ternary (TCR SP3.4). Same peptide as 2NNA. Out of scope for modeling. Broughton et al. 2012 Immunity."
