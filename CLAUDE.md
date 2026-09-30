@@ -47,6 +47,13 @@ Sollid 2012; the rest still need checking. No 3D/modeling work started. **`git` 
 low on disk space, so git commands use GitHub Desktop's bundled binary instead:
 `/Applications/GitHub Desktop.app/Contents/Resources/app/git/bin/git`. Alias or invoke by
 full path; the system `git` at `/usr/bin/git` still just triggers the CLT install prompt.
+That bundled git is a relocated build: invoked directly it resolves its own support dirs to
+`//libexec/git-core` and `//share/git-core/templates`, so it can't find its helper
+subcommands, falls back to `PATH`, hits the `/usr/bin/git` stub, and pops the CLT installer
+mid-commit (the commit still succeeds). `GIT_EXEC_PATH` and `GIT_TEMPLATE_DIR` are now set
+to the bundle's real `libexec/git-core` and `share/git-core/templates` in
+`~/.claude/settings.json` `env`, which silences it. Outside Claude Code — a bare terminal,
+a script — set them there too, or the prompt comes back.
 
 ## 2. Teaching project — `teaching/data8-project/`
 

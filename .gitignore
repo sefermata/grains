@@ -27,4 +27,8 @@ results/structures/
 
 # OS
 .DS_Store
+
+# Personal working copies of the generated notebooks — the user's own pass through a
+# part, kept for taking notes. build_notebooks.py is the source; these are throwaway.
 teaching/data8-project/project_datascience-Copy1.ipynb
+teaching/data8-project/*practice draft*.ipynb
