@@ -8,9 +8,9 @@
 
 ## The project in one paragraph
 
-A six-part, self-contained data-science project, *Spotting Gluten Grains from Protein
+A five-part, self-contained data-science project, *Spotting Gluten Grains from Protein
 Sequence*. Students use only introductory data-science skills — tables, grouped
-visualization, a permutation test, the bootstrap, and a k-nearest-neighbors classifier — to
+visualization, a permutation test, and a k-nearest-neighbors classifier — to
 test whether the amino-acid makeup of a grain's storage proteins can separate the grains
 that cause celiac disease (wheat, barley, rye) from those that do not. It ships as paired
 Jupyter notebooks (a Berkeley `datascience` track and a `pandas` track), a full solution
@@ -68,9 +68,9 @@ classification unit. This project fills both. It is:
 
 - Offered at the Tutor Center as an optional enrichment project during the
   prediction / classification unit ([course weeks — confirm]).
-- Run as a one-hour tutor-led group session: work Parts 0–2 together, assign Parts 3–6.
+- Run as a one-hour tutor-led group session: work Parts 0–2 together, assign Parts 3–5.
 - Used at tutor training ([session — confirm]) to demonstrate questioning strategy and
-  modeling of problem-solving on Part 6.
+  modeling of problem-solving on Part 5.
 
 **Use in future semesters.** Nothing is tied to a term. The biology is stable; the build
 scripts regenerate every artifact; the `datascience` + `pandas` split protects against a
@@ -96,7 +96,7 @@ topic areas:
 - **Fostering independent learners / metacognition** — the `check_*` feedback loop and the
   one-sentence reflections build self-monitoring.
 - **Transfer of learning** — the two-track design explicitly bridges the classroom tool
-  (`datascience`) and a professional one (`pandas`, and `scikit-learn` in Part 6).
+  (`datascience`) and a professional one (`pandas`, and `scikit-learn` in Part 5).
 
 **High-impact practices.** For an introductory student, the project approximates an
 undergraduate-research experience — an authentic question, real data from a public

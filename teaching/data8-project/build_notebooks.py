@@ -17,7 +17,7 @@ Authoring rules (so the nested-string situation stays sane):
   * never put a triple-double-quote or an f"double" string inside a snippet
 
 Run:  python build_notebooks.py
-Currently emits Part 0 + Part 1 only (preview).
+Currently emits Parts 0-2 only (preview).
 """
 
 from __future__ import annotations
@@ -61,9 +61,9 @@ def solvable(version: str, *, scaffold: str, solution: str) -> dict:
 # --------------------------------------------------------------------------- #
 
 TITLE = r"""
-# Project — Spotting Gluten Grains from Protein Sequence
+# Identifying Gluten Grains from Protein Sequence
 
-Wheat, barley, and rye trigger celiac disease. Rice, maize, oats, quinoa, millet, and
+Wheat, barley, and rye trigger reactions in someone with celiac disease. Rice, maize, oats, quinoa, millet, and
 buckwheat do not. In this project you'll test whether you can tell the two apart **from
 protein sequence alone**, using only the tools from this course.
 """
@@ -71,49 +71,48 @@ protein sequence alone**, using only the tools from this course.
 OVERVIEW = r"""
 ## What you'll do
 
-The project has six parts. Each one ends with something concrete you can check.
+The project has five parts. Each one ends with something concrete you can check.
 
 | Part | You will... | New skill |
 |---|---|---|
-| **0. Orientation** | Load the data and learn what one row means | reading a data table |
-| **1. Sequence to numbers** | Write functions that turn a protein string into numbers (how much of it is proline, how much is glutamine) | functions, `apply` |
-| **2. Exploration** | Compare gluten vs non-gluten grains with a histogram and a scatter plot; find which "safe" grains look suspicious | grouped visualization |
-| **3. Is the difference real?** | Run a permutation test on the gap between the two groups | hypothesis testing |
-| **5. A sharper feature** | Count a *repeating pattern* instead of raw amounts, and watch the borderline grains separate | more string logic |
-| **6. Prediction** | Build a k-nearest-neighbors classifier, test it honestly on held-out data, and see where it fails | classification |
+| **0. Orientation** | Load the data and learn what one row means | Reading a data table |
+| **1. Sequence to numbers** | Write functions that turn a protein string into numbers (how much of it is proline, how much is glutamine) | Functions, `apply` |
+| **2. Exploration** | Compare gluten vs non-gluten grains with a histogram and a scatter plot; find which "safe" grains look suspicious | Grouped visualization |
+| **3. Is the difference real?** | Run a permutation test on the gap between the two groups | Hypothesis testing |
+| **4. A sharper feature** | Count a *repeating pattern* instead of raw amounts, and watch the borderline grains separate | More string logic |
+| **5. Prediction** | Build a k-nearest-neighbors classifier, test it honestly on held-out data, and see where it fails | Classification |
 
-This preview contains **Part 0** and **Part 1**.
+This preview contains **Parts 0 through 2**.
 """
 
 WHY = r"""
 ## Why this project
 
-**The real question.** Some grains harm people with celiac disease because of a protein
+Some grains harm people with celiac disease because of a protein
 called **gluten**. Gluten is hard to digest, and fragments of it set off an immune reaction
 in the small intestine. Researchers study exactly how those fragments fit into an immune
 receptor using 3-D structure prediction. This project asks a simpler version of the same
-question that fits in an intro course: *can the amino-acid makeup of a grain's proteins,
+question: *can the amino-acid makeup of a grain's proteins,
 by itself, separate the harmful grains from the harmless ones?* And there's a built-in
-answer key — we already know which grains are which — so you can tell whether your method
+answer key, that is, we already know which grains are which, so you can tell whether your method
 works.
 
 **This is bioinformatics.** Bioinformatics (also called computational biology) means
-answering biological questions with code and statistics applied to large datasets —
-DNA, protein sequences, clinical measurements. The core skills are the ones this course
+answering biological questions with code and statistics applied to large datasets, including
+DNA, protein sequences, and clinical measurements. The core skills are the ones this course already
 teaches: load and clean data, visualize it, test whether a pattern is real, and build a
-model that predicts. The extra ingredient is a little biology vocabulary, which this
+model that predicts. The extra piece in this module is a little biology vocabulary, which this
 notebook gives you as you go.
 
-**As a career.** Roles that combine data skills with biology have grown alongside the size
-of biological datasets — in biotechnology and pharmaceutical companies, hospital and
+**As a career:** Roles that combine data skills with biology have grown alongside the size
+of biological datasets, in biotechnology and pharmaceutical companies, hospital and
 public-health laboratories, agricultural research, and academic labs. You do not need a
-biology degree to enter the field; a data-science foundation plus domain curiosity is a
-common path. This project is a small proof of that: you'll reach a real result with nothing
-beyond this course.
+biology degree to enter the field; a data-science foundation plus curiosity is a
+common path.
 """
 
 BIOLOGY_MINIMUM = r"""
-## The biology you need (all of it)
+## The biology you need:
 
 * A **protein** is a molecule built from a chain of small parts called **amino acids**.
   There are 20 kinds. Each is written as one capital letter:
@@ -125,19 +124,14 @@ BIOLOGY_MINIMUM = r"""
   MAAKIFALLALHALLVSGTTAAIIPQCSLAPNAIIPQFIPPVTALGNEHLAVQAIRLQQ...
   ```
 
-  That is not a misspelled word. It is a chain of 267 amino acids, one letter each, read
-  left to right.
+  It is a chain of 267 amino acids, one letter each, read left to right.
+
 * Two of the letters matter here: **`P`** (the amino acid *proline*) and **`Q`**
   (*glutamine*). The storage protein in wheat, barley, and rye is unusually rich in `P`
-  and `Q`, and that is chemically why it triggers celiac disease.
+  and `Q`, and chemically, that is why it triggers celiac disease.
 * In our data, each row is one protein. The `sequence` column holds its string. The
-  `gluten` column says whether that protein's grain is one of the three that cause celiac
+  `gluten` column says whether that protein's grain is one of the three that trigger reactions in celiac
   disease. **Predicting `gluten` from `sequence` is the whole project.**
-"""
-
-TRACK_NOTE_DS = r"""
-> **Track: `datascience`** — the Berkeley teaching library (`Table`). A parallel `pandas`
-> version of this notebook exists; `datascience_vs_pandas.md` maps one to the other.
 """
 
 TRACK_NOTE_PD = r"""
@@ -147,7 +141,7 @@ TRACK_NOTE_PD = r"""
 """
 
 CHECKS_MD = r"""
-## Setup — run these first
+## Setup - Run these first
 
 The next cell defines small `check_*` helpers used after every question. They print `OK`
 when an answer looks right and a short hint otherwise. They are guidance, not a grade, and
@@ -157,6 +151,8 @@ you don't need to read them.
 SETUP_DS = r"""
 from datascience import Table, are
 import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
 
 np.random.seed(8)   # keep every run reproducible (Data 8, naturally)
 """
@@ -164,6 +160,8 @@ np.random.seed(8)   # keep every run reproducible (Data 8, naturally)
 SETUP_PD = r"""
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
 
 np.random.seed(8)   # keep every run reproducible (Data 8, naturally)
 """
@@ -232,6 +230,37 @@ def check_q1_4(longest_seq, shortest_seq, long_p_count, long_p_frac, short_p_cou
         (abs(long_p_frac - longest_seq.count('P') / len(longest_seq)) < 1e-9, 'long_p_frac should be count / length'),
         (abs(short_p_frac - shortest_seq.count('P') / len(shortest_seq)) < 1e-9, 'short_p_frac should be count / length'),
     ])
+
+
+def _current_axes():
+    fig = plt.gcf()
+    return fig.axes[0] if fig.axes else None
+
+
+def _q2_1_report(my_bins, top):
+    try:
+        edges = np.array(my_bins, dtype=float)
+    except Exception:
+        print('x  Q2.1: my_bins should be a list of bin edges, for example np.arange(0, 0.5, 0.05)'); return
+    ax = _current_axes()
+    n_bars = len(ax.patches) if ax is not None else 0
+    n_bins = len(edges) - 1
+    _report('Q2.1', [
+        (edges.ndim == 1 and n_bins >= 1, 'my_bins should be a list of bin edges, for example np.arange(0, 0.5, 0.05)'),
+        (edges.min() <= 0, 'the first bin edge should be 0 (or lower)'),
+        (edges.max() >= top, 'the last edge must be past the largest pq_frac (' + format(top, '.3f') + '), or some proteins are left out'),
+        (10 <= n_bins <= 50, 'use between 10 and 50 bins; you have ' + str(n_bins)),
+        (n_bars > 0, 'no histogram found: draw it in this same cell, after you set my_bins'),
+    ])
+
+
+def check_q2_2(grains):
+    ax = _current_axes()
+    n_dots = sum(len(c.get_offsets()) for c in ax.collections) if ax is not None else 0
+    n_rows = grains.num_rows if hasattr(grains, 'num_rows') else len(grains)
+    _report('Q2.2', [
+        (n_dots == n_rows, 'expected one dot per protein (' + str(n_rows) + '), found ' + str(n_dots) + '. Draw the scatter in this same cell'),
+    ])
 """
 
 # ---- checks that touch the table / dataframe ---------------------------- #
@@ -264,6 +293,36 @@ def check_q1_3(t):
         (0.40 < gy < 0.55, 'mean pq_frac for gluten grains looks off (' + format(gy, '.3f') + ', expect ~0.47)'),
         (gy > gn + 0.2, 'gluten grains should have a much higher mean pq_frac than the rest'),
     ])
+
+def check_q2_1(my_bins, grains):
+    _q2_1_report(my_bins, grains.column('pq_frac').max())
+
+
+def check_q2_3(group_means):
+    try:
+        pq_label = [l for l in group_means.labels if 'pq_frac' in l][0]
+        yes = group_means.where('gluten', 'yes').column(pq_label)[0]
+        no = group_means.where('gluten', 'no').column(pq_label)[0]
+        n = group_means.num_rows
+    except Exception:
+        print('x  Q2.3: group_means should be a Table with a gluten column and a mean column for each of p_frac, q_frac, pq_frac'); return
+    _report('Q2.3', [
+        (n == 2, 'expected 2 rows (one per gluten value), got ' + str(n)),
+        (abs(yes - 0.468) < 0.01, 'mean pq_frac for gluten == yes should be about 0.47, got ' + format(yes, '.3f')),
+        (abs(no - 0.180) < 0.01, 'mean pq_frac for gluten == no should be about 0.18, got ' + format(no, '.3f')),
+    ])
+
+
+def check_q2_4(by_grain):
+    try:
+        order = list(by_grain.column('grain'))
+    except Exception:
+        print('x  Q2.4: by_grain should be a Table with a grain column and a column of mean pq_frac'); return
+    _report('Q2.4', [
+        (len(order) == 10, 'expected 10 grains, got ' + str(len(order))),
+        (set(order[:3]) == {'wheat', 'barley', 'rye'}, 'sorted largest first, the top three should be wheat, barley, and rye'),
+        (set(order[3:6]) == {'oat', 'maize', 'sorghum'}, 'the next three should be oat, maize, and sorghum'),
+    ])
 """
 
 CHECKS_PD_EXTRA = r"""
@@ -295,6 +354,35 @@ def check_q1_3(df):
         (0.40 < gy < 0.55, 'mean pq_frac for gluten grains looks off (' + format(gy, '.3f') + ', expect ~0.47)'),
         (gy > gn + 0.2, 'gluten grains should have a much higher mean pq_frac than the rest'),
     ])
+
+def check_q2_1(my_bins, grains):
+    _q2_1_report(my_bins, grains['pq_frac'].max())
+
+
+def check_q2_3(group_means):
+    try:
+        yes = group_means.loc['yes', 'pq_frac']
+        no = group_means.loc['no', 'pq_frac']
+        n = len(group_means)
+    except Exception:
+        print('x  Q2.3: group_means should be a DataFrame indexed by gluten, with columns p_frac, q_frac, pq_frac'); return
+    _report('Q2.3', [
+        (n == 2, 'expected 2 rows (one per gluten value), got ' + str(n)),
+        (abs(yes - 0.468) < 0.01, 'mean pq_frac for gluten == yes should be about 0.47, got ' + format(yes, '.3f')),
+        (abs(no - 0.180) < 0.01, 'mean pq_frac for gluten == no should be about 0.18, got ' + format(no, '.3f')),
+    ])
+
+
+def check_q2_4(by_grain):
+    try:
+        order = list(by_grain.index)
+    except Exception:
+        print('x  Q2.4: by_grain should be a Series of mean pq_frac indexed by grain'); return
+    _report('Q2.4', [
+        (len(order) == 10, 'expected 10 grains, got ' + str(len(order))),
+        (set(order[:3]) == {'wheat', 'barley', 'rye'}, 'sorted largest first, the top three should be wheat, barley, and rye'),
+        (set(order[3:6]) == {'oat', 'maize', 'sorghum'}, 'the next three should be oat, maize, and sorghum'),
+    ])
 """
 
 
@@ -303,7 +391,7 @@ def check_q1_3(df):
 # --------------------------------------------------------------------------- #
 
 def part0(track: str, version: str) -> list[dict]:
-    cells = [md("## Part 0 — Orientation  ·  5 points")]
+    cells = [md("## Part 0 — Orientation")]
 
     if track == "ds":
         cells.append(md("Load the data into a `Table` and look at the first few rows."))
@@ -317,12 +405,12 @@ def part0(track: str, version: str) -> list[dict]:
 
         | column | what it is | do we compute from it? |
         |---|---|---|
-        | `seq_id` | our label for the row (`S001`, `S002`, ...) | No — it just lets us point at one specific protein. |
-        | `grain` | the grain this protein comes from (`wheat`, `rice`, ...) | Used for grouping, and for error analysis in Part 6. |
-        | `gluten` | `yes` if the grain is wheat, barley, or rye; otherwise `no` | **Yes — this is the label we try to predict.** |
-        | `protein_name` | the name the source database gives this protein | No calculations from it. In Part 6 it helps explain *which* proteins the model gets wrong. Ignore it until then. |
-        | `accession` | this protein's ID in **UniProt**, a public protein database | No — it's *provenance* only (a record of where the data came from, so you could trace it back). Paste it into uniprot.org to see the original record. |
-        | `sequence` | the protein itself: a string of capital letters, one per amino acid | **Yes — every number we build comes from this column.** |
+        | `seq_id` | Our label for the row (`S001`, `S002`, ...) | No, it just lets us point at one specific protein. |
+        | `grain` | The grain this protein comes from (`wheat`, `rice`, ...) | Used for grouping, and for error analysis in Part 5. |
+        | `gluten` | `yes` if the grain is wheat, barley, or rye; otherwise `no` | **Yes! This is the label we try to predict.** |
+        | `protein_name` | The name the source database gives this protein | No calculations from it. In Part 5 it helps explain *which* proteins the model gets wrong. Ignore it until then. |
+        | `accession` | This is the protein's ID in **UniProt**, a public protein database | No, it's only a record of where the data came from. Paste it into uniprot.org to see the original record. |
+        | `sequence` | The protein itself: a string of capital letters, one per amino acid | **Yes! Every number we build comes from this column.** |
 
         You'll see the same `protein_name` (and the same `grain`) on many rows. That's
         expected: a grain has many storage-protein genes and many database entries, and
@@ -330,7 +418,7 @@ def part0(track: str, version: str) -> list[dict]:
     """))
 
     cells.append(md(r"""
-        ### Question 0.1 · 2 pt
+        ### Question 0.1
 
         Set `n_rows` and `n_cols` to the number of rows and columns in `grains`.
     """))
@@ -348,7 +436,7 @@ def part0(track: str, version: str) -> list[dict]:
         ))
 
     cells.append(md(r"""
-        ### Question 0.2 · 2 pt
+        ### Question 0.2
 
         Each row is one protein, so counting rows per grain tells you how many proteins we
         have for each. Build a 2-column table, `per_grain`: one column is `grain`, the other
@@ -374,11 +462,16 @@ def part0(track: str, version: str) -> list[dict]:
     cells.append(code("check_q0_2(per_grain)"))
 
     cells.append(md(r"""
-        ### Question 0.3 · 1 pt
+        ### Question 0.3
 
-        Before building any model, find the score to beat. Suppose you ignored the
-        `sequence` entirely and, for every row, just guessed whichever `gluten` value shows
-        up more often. How often would that be right?
+        Before building any model, you need to find the **score to beat**.
+
+        **Predict first.** A friend says, "I don't need to look at any protein. I'll just
+        say `'no'` every time." Will your friend be right more than half the time, less than
+        half, or about half? Decide, then compute it below.
+
+        Suppose you ignored the `sequence` entirely and, for every row, just guessed whichever
+        `gluten` value shows up more often. How often would that be right?
 
         Count the `'no'` rows and the `'yes'` rows, then set `baseline_accuracy` to the
         larger count divided by the total number of rows.
@@ -424,8 +517,18 @@ def part0(track: str, version: str) -> list[dict]:
             """,
         ))
     cells.append(md(r"""
-        Now say why this number matters, in one or two sentences. (What would it mean if a
-        model you build only reached this accuracy?) Put your answer in `answer_q0_3`.
+        That number is called the **baseline** - the accuracy of a strategy that uses no real
+        information. It is the score any real model has to beat. You'll
+        compare your models to this baseline in the later parts.
+
+        **Why not just look at accuracy by itself?** Imagine a dataset where only 1 protein
+        in 100 is gluten. A "model" that always says `'no'` would be 99% accurate, but
+        completely useless, because it never finds a single gluten protein. Our data is
+        close to balanced, so our baseline is low, but not every dataset is like that.
+
+        **Finish this sentence in `answer_q0_3`, using your own words:**
+
+        *"If my model only got about this % accuracy, that would mean ______, because ______."*
     """))
     cells.append(solvable(
         version,
@@ -447,31 +550,27 @@ def part0(track: str, version: str) -> list[dict]:
 
 def part1(track: str, version: str) -> list[dict]:
     cells = [md(r"""
-        ## Part 1 — From a sequence to numbers  ·  12 points
+        ## Part 1 — From a sequence to numbers
 
         A model can't work with the raw string `'MAAKIF...IF'`. It needs **features**:
-        numbers that summarize a sequence. In this part you build three of them —
+        numbers that summarize a sequence. In this part you build three of them:
 
         * `p_frac`: the fraction of the protein that is proline (`P`)
         * `q_frac`: the fraction that is glutamine (`Q`)
         * `pq_frac`: the two added together
 
-        — and attach them to the table as new columns.
+        Then you'll attach them to the table as new columns.
 
         You'll start with a general helper, `count_aa(seq, aa)`. The name `aa` is short for
         **amino acid**: it's just a parameter, so the one function works for any letter. In
-        Q1.2 you'll call it with `'P'` and `'Q'` specifically. We don't care about amino
-        acids in general — `aa` is only there so we don't have to write the counting logic
-        twice.
+        Q1.2 you'll call it with `'P'` and `'Q'` specifically.
     """)]
 
     # Q1.1
     cells.append(md(r"""
-        ### Question 1.1 · 3 pt
+        ### Question 1.1 
 
-        Write `count_aa(seq, aa)` that returns how many times the single character `aa`
-        occurs in the string `seq`. A `for` loop over the letters of `seq` is a fine way to
-        do it.
+        Write `count_aa(seq, aa)` that returns how many times the single character `aa` occurs in the string `seq`.
     """))
     cells.append(solvable(
         version,
@@ -498,16 +597,16 @@ def part1(track: str, version: str) -> list[dict]:
 
     # Q1.2
     cells.append(md(r"""
-        ### Question 1.2 · 3 pt
+        ### Question 1.2
 
         Write `aa_fraction(seq, aa)`: the fraction of `seq` that is the character `aa` (a
-        number between 0 and 1). Reuse `count_aa` rather than re-writing the counting logic.
+        number between 0 and 1). Use `count_aa` in your function.
 
         Then write `proline_fraction(seq)` and `glutamine_fraction(seq)` by calling
-        `aa_fraction` with the right letter for each amino acid.
+        `aa_fraction` with the correct letter for each amino acid.
 
-        > **Note:** string comparisons in Python are case-sensitive — `'P'` and `'p'` are
-        > different characters, so double-check which case the `sequence` column actually uses.
+        **Hint:** string comparisons in Python are case-sensitive — `'P'` and `'p'` are
+        different characters, so double-check which case the `sequence` column actually uses.
     """))
     cells.append(solvable(
         version,
@@ -544,14 +643,13 @@ def part1(track: str, version: str) -> list[dict]:
     # Q1.3
     if track == "ds":
         cells.append(md(r"""
-            ### Question 1.3 · 4 pt
+            ### Question 1.3
 
             Add three columns to `grains`: `p_frac`, `q_frac`, and `pq_frac`
             (= `p_frac + q_frac`), computed from the `sequence` column with the functions
             you just wrote.
 
-            **Hints:** `with_columns` returns a *new* table rather than changing `grains` in
-            place — make sure the result actually gets saved back to `grains`. A `Table` also
+            **Hints:** `with_columns` on its returns a *new* table rather than changing `grains` itself. Make sure the result actually gets saved back to `grains`! A `Table` also
             has an `apply` method that runs a function down every value in one column; look
             it up in the `datascience` docs if you haven't used it yet.
         """))
@@ -580,7 +678,7 @@ def part1(track: str, version: str) -> list[dict]:
         ))
     else:
         cells.append(md(r"""
-            ### Question 1.3 · 4 pt
+            ### Question 1.3
 
             Add three columns to `grains`: `p_frac`, `q_frac`, and `pq_frac`
             (= `p_frac + q_frac`), computed from the `sequence` column with the functions
@@ -614,7 +712,7 @@ def part1(track: str, version: str) -> list[dict]:
     # Q1.4 — concrete, then a one-sentence written follow-up
     seq_access = "grains.column('sequence')" if track == "ds" else "grains['sequence']"
     cells.append(md(r"""
-        ### Question 1.4 · 2 pt
+        ### Question 1.4
 
         Here's why we used a *fraction* and not a raw count. The two cells below pick out the
         longest and the shortest protein in the dataset. For each, set the raw `P` count and
@@ -647,7 +745,7 @@ def part1(track: str, version: str) -> list[dict]:
     cells.append(md(r"""
         You want to say which of these two proteins is *more proline-rich*. The raw counts
         and the fractions can point to different answers. Which number answers that question
-        fairly, and why? One sentence in `answer_q1_4`.
+        fairly, and why? Write one sentence in `answer_q1_4`.
     """))
     cells.append(solvable(
         version,
@@ -665,7 +763,255 @@ def part1(track: str, version: str) -> list[dict]:
         ---
         **Part 1 done.** `grains` now carries `p_frac`, `q_frac`, and `pq_frac`. Part 2
         uses them to compare gluten vs non-gluten grains with a histogram and a scatter
-        plot — and to spot which "safe" grains look suspiciously gluten-like.
+        plot, and to spot which "safe" grains look suspiciously gluten-like.
+    """))
+    return cells
+
+
+# --------------------------------------------------------------------------- #
+#  Part 2
+# --------------------------------------------------------------------------- #
+
+def part2(track: str, version: str) -> list[dict]:
+    cells = [md(r"""
+        ## Part 2 — Exploration
+
+        Part 1 turned every protein into numbers. Before running any test or building any
+        model, look at those numbers. Making pictures and summaries first is called
+        **exploration**: you aren't proving anything yet, just seeing what the data looks like
+        and noticing anything odd. (Part 3 asks whether what you see is real.)
+    """)]
+
+    # ---- Q2.1: overlaid histogram ------------------------------------------
+    cells.append(md(r"""
+        ### Question 2.1
+
+        A **histogram** shows how a set of numbers is spread out. It cuts the number line into
+        **bins** (ranges) and shows how many values fall in each one. An **overlaid** histogram
+        draws two groups on the same axes so you can compare them directly.
+
+        Draw one for `pq_frac`, with one group per `gluten` value (`'yes'` and `'no'`).
+
+        First choose your bins. `np.arange(start, stop, step)` makes a list of bin edges from
+        `start` up to (but not including) `stop`, counting by `step`. For example,
+        `np.arange(0, 1, 0.25)` gives `0, 0.25, 0.5, 0.75`. Pick edges that start at 0 and go
+        **past** the largest `pq_frac` value, with somewhere between 10 and 50 bins. Save the
+        edges as `my_bins`.
+    """))
+    if track == "ds":
+        cells.append(md(r"""
+            **Hint:** `grains.hist(column, group=..., bins=...)` draws one histogram per value of
+            the `group` column. It scales each group's bars so the total area is 1, which keeps
+            the comparison fair when the groups have different numbers of proteins.
+        """))
+        cells.append(solvable(
+            version,
+            scaffold=r"""
+                my_bins = ...   # bin edges, made with np.arange(start, stop, step)
+
+                ...   # draw the overlaid histogram of pq_frac, grouped by gluten, using my_bins
+
+                check_q2_1(my_bins, grains)
+            """,
+            solution=r"""
+                my_bins = np.arange(0, 0.76, 0.02)
+
+                grains.hist('pq_frac', group='gluten', bins=my_bins)
+
+                check_q2_1(my_bins, grains)
+            """,
+        ))
+    else:
+        cells.append(md(r"""
+            **Hint:** pandas has no one-line grouped histogram, so use a loop. The loop below
+            runs once per `gluten` value, with `label` set to `'no'` and then `'yes'`, and
+            `subset` set to the rows for that value. In the loop, call
+            `plt.hist(values, bins=..., alpha=0.5, density=True, label=label)`. Here,
+            `alpha=0.5` makes the bars see-through so you can see where the groups overlap, and
+            `density=True` scales each group's bars so the total area is 1, which keeps the
+            comparison fair when the groups have different numbers of proteins.
+        """))
+        cells.append(solvable(
+            version,
+            scaffold=r"""
+                my_bins = ...   # bin edges, made with np.arange(start, stop, step)
+
+                for label, subset in grains.groupby('gluten'):
+                    ...   # one histogram of subset['pq_frac'] per group, using my_bins
+
+                plt.xlabel('pq_frac')
+                plt.legend(title='gluten')
+                check_q2_1(my_bins, grains)
+            """,
+            solution=r"""
+                my_bins = np.arange(0, 0.76, 0.02)
+
+                for label, subset in grains.groupby('gluten'):
+                    plt.hist(subset['pq_frac'], bins=my_bins, alpha=0.5, density=True, label=label)
+
+                plt.xlabel('pq_frac')
+                plt.legend(title='gluten')
+                check_q2_1(my_bins, grains)
+            """,
+        ))
+
+    # ---- Q2.2: scatter ------------------------------------------------------
+    cells.append(md(r"""
+        ### Question 2.2
+
+        A **scatter plot** puts one dot on the page for each row, using one column for the
+        horizontal position (x) and another for the vertical position (y). Make one with
+        `p_frac` on the x-axis and `q_frac` on the y-axis, with the dots colored by `gluten`.
+        Each dot is one protein.
+    """))
+    if track == "ds":
+        cells.append(md(r"""
+            **Hint:** `grains.scatter(x_column, y_column, group=...)` works like `hist`: the
+            `group` column decides the colors.
+        """))
+        cells.append(solvable(
+            version,
+            scaffold=r"""
+                ...   # scatter p_frac (x) against q_frac (y), colored by gluten
+
+                check_q2_2(grains)
+            """,
+            solution=r"""
+                grains.scatter('p_frac', 'q_frac', group='gluten')
+
+                check_q2_2(grains)
+            """,
+        ))
+    else:
+        cells.append(md(r"""
+            **Hint:** use the same kind of loop as in Q2.1, with
+            `plt.scatter(x_values, y_values, s=10, alpha=0.6, label=label)` inside it. Here,
+            `s=10` sets the dot size.
+        """))
+        cells.append(solvable(
+            version,
+            scaffold=r"""
+                for label, subset in grains.groupby('gluten'):
+                    ...   # one scatter call per group: p_frac on x, q_frac on y
+
+                plt.xlabel('p_frac')
+                plt.ylabel('q_frac')
+                plt.legend(title='gluten')
+                check_q2_2(grains)
+            """,
+            solution=r"""
+                for label, subset in grains.groupby('gluten'):
+                    plt.scatter(subset['p_frac'], subset['q_frac'], s=10, alpha=0.6, label=label)
+
+                plt.xlabel('p_frac')
+                plt.ylabel('q_frac')
+                plt.legend(title='gluten')
+                check_q2_2(grains)
+            """,
+        ))
+    cells.append(md(r"""
+        Take a moment to look at both plots before you move on. Where do the two groups overlap?
+        Do any dots from the `no` group sit among the `yes` dots?
+    """))
+
+    # ---- Q2.3: group means --------------------------------------------------
+    cells.append(md(r"""
+        ### Question 2.3
+
+        A picture shows the whole spread. A **group mean** squeezes each group down to a single
+        number, which is easier to compare. Build a table `group_means` with one row for each
+        `gluten` value (`'no'` and `'yes'`) and the mean of `p_frac`, `q_frac`, and `pq_frac`
+        for each.
+    """))
+    if track == "ds":
+        cells.append(md(r"""
+            **Hint:** `t.group('gluten', np.mean)` takes the mean of *every* other column in
+            `t`, so use `select` first to keep only the columns you want. The new columns are
+            named with the word `mean` added, like `p_frac mean`.
+        """))
+        cells.append(solvable(
+            version,
+            scaffold="group_means = ...\ngroup_means\n\ncheck_q2_3(group_means)",
+            solution=(
+                "group_means = grains.select('gluten', 'p_frac', 'q_frac', 'pq_frac').group('gluten', np.mean)\n"
+                "group_means\n\ncheck_q2_3(group_means)"
+            ),
+        ))
+    else:
+        cells.append(md(r"""
+            **Hint:** `grains.groupby('gluten')` splits the rows by `gluten` value. Pick the
+            columns you want in double square brackets, like `[['p_frac', 'q_frac']]`, then
+            call `.mean()`.
+        """))
+        cells.append(solvable(
+            version,
+            scaffold="group_means = ...\ngroup_means\n\ncheck_q2_3(group_means)",
+            solution=(
+                "group_means = grains.groupby('gluten')[['p_frac', 'q_frac', 'pq_frac']].mean()\n"
+                "group_means\n\ncheck_q2_3(group_means)"
+            ),
+        ))
+
+    # ---- Q2.4: per-grain means ----------------------------------------------
+    cells.append(md(r"""
+        ### Question 2.4
+
+        The `no` group is really seven different grains lumped together (rice, maize, oats, and
+        so on). Zoom in one level: build a table `by_grain` with the mean `pq_frac` for each
+        `grain`, sorted so the largest mean comes first.
+    """))
+    if track == "ds":
+        cells.append(solvable(
+            version,
+            scaffold="by_grain = ...\nby_grain\n\ncheck_q2_4(by_grain)",
+            solution=(
+                "by_grain = grains.select('grain', 'pq_frac').group('grain', np.mean).sort('pq_frac mean', descending=True)\n"
+                "by_grain\n\ncheck_q2_4(by_grain)"
+            ),
+        ))
+    else:
+        cells.append(solvable(
+            version,
+            scaffold="by_grain = ...\nby_grain\n\ncheck_q2_4(by_grain)",
+            solution=(
+                "by_grain = grains.groupby('grain')['pq_frac'].mean().sort_values(ascending=False)\n"
+                "by_grain\n\ncheck_q2_4(by_grain)"
+            ),
+        ))
+        cells.append(md(r"""
+            > **pandas note.** Selecting one column with single brackets, `['pq_frac']`, gives a
+            > `Series` (one labeled column), so `by_grain` is a `Series` indexed by `grain`, like
+            > `per_grain` in Q0.2.
+        """))
+
+    # ---- Q2.5: written ------------------------------------------------------
+    cells.append(md(r"""
+        ### Question 2.5
+
+        Wheat, barley, and rye are the three grains that trigger celiac disease. Look at
+        `by_grain` and your two plots. Which grains that do **not** trigger it come closest to
+        those three? Name them, and say why that matters for a classifier that only looks at
+        P and Q content. (A **classifier** is a rule that predicts a label. Think about what a
+        rule like "high `pq_frac` means gluten" would say about these grains, and whether it
+        would be right.) Write one or two sentences in `answer_q2_5`.
+    """))
+    cells.append(solvable(
+        version,
+        scaffold="answer_q2_5 = 'your answer here'\n\ncheck_written('Q2.5 written', answer_q2_5)",
+        solution=(
+            "answer_q2_5 = (\n"
+            "    'Oat, maize, and sorghum come closest. Their storage proteins are also rich in P and '\n"
+            "    'Q, so a rule based on P and Q content alone would wrongly call them gluten grains '\n"
+            "    '(false positives).'\n"
+            ")\n\ncheck_written('Q2.5 written', answer_q2_5)"
+        ),
+    ))
+
+    cells.append(md(r"""
+        ---
+        **Part 2 done.** Gluten proteins really do look different: they have a much higher share
+        of `P` and `Q`. But three "safe" grains sit uncomfortably close. Part 3 asks whether the
+        gap between the two groups is real or could have happened by chance.
     """))
     return cells
 
@@ -681,12 +1027,13 @@ def build(track: str, version: str) -> dict:
         md(OVERVIEW),
         md(WHY),
         md(BIOLOGY_MINIMUM),
-        md(TRACK_NOTE_DS if track == "ds" else TRACK_NOTE_PD),
+        *([] if track == "ds" else [md(TRACK_NOTE_PD)]),
         md(CHECKS_MD),
         code(SETUP_DS if track == "ds" else SETUP_PD),
         code(checks),
         *part0(track, version),
         *part1(track, version),
+        *part2(track, version),
     ]
     return {"cells": cells, "metadata": NB_METADATA, "nbformat": 4, "nbformat_minor": 4}
 

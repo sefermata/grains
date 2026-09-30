@@ -21,25 +21,24 @@ groups, and building a classifier*.
 | `data/grains_mystery.csv` | 18 **unlabeled** proteins students classify at the end |
 | `data/grains_mystery_key.csv` | answers for the mystery set — **instructor only** |
 | `build_dataset.py` | regenerates the three CSVs from the upstream FASTA files (reproducibility) |
-| `INSTRUCTOR.md` | learning objectives, the six parts question-by-question, expected answers, rubric, timing, common mistakes |
+| `INSTRUCTOR.md` | learning objectives, the five parts question-by-question, expected answers, review guidance, timing, common mistakes |
 | `datascience_vs_pandas.md` | side-by-side reference for every table operation the project uses |
-| `project_datascience.ipynb` | student notebook, Berkeley `datascience` library *(generated next)* |
-| `project_pandas.ipynb` | student notebook, `pandas` *(generated next)* |
-| `solutions_datascience.ipynb` / `solutions_pandas.ipynb` | full solutions *(generated next)* |
+| `project_datascience.ipynb` | student notebook, Berkeley `datascience` library |
+| `project_pandas.ipynb` | student notebook, `pandas` |
+| `solutions_datascience.ipynb` / `solutions_pandas.ipynb` | full solutions |
 
-## The six parts
+## The five parts
 
 0. **Orientation** — load the data, understand what a row is.
 1. **Sequence features** — write functions that turn a sequence string into numbers
    (proline %, glutamine %, length).
 2. **Exploration** — histograms and a scatter; which non-gluten grains look suspicious?
 3. **Is the difference real?** — a permutation test on the gap in mean P+Q content.
-4. **How big is it?** — a bootstrap confidence interval (kept short on purpose).
-5. **A sharper feature** — count a repeat motif; watch the borderline grains separate.
-6. **Prediction** — a k-nearest-neighbors classifier: train/test split, accuracy vs. a
+4. **A sharper feature** — count a repeat motif; watch the borderline grains separate.
+5. **Prediction** — a k-nearest-neighbors classifier: train/test split, accuracy vs. a
    baseline, feature-set comparison, error analysis, and the mystery set.
 
-Weighting favors **prediction** (Parts 5–6 = 55 of 105 points). Judged on a held-out
+The emphasis is on **prediction** (Part 5). Judged on a held-out
 "mystery set", because a random test split from the same grains is near-saturated.
 
 ## How to run it

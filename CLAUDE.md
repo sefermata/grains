@@ -50,22 +50,22 @@ full path; the system `git` at `/usr/bin/git` still just triggers the CLT instal
 
 ## 2. Teaching project — `teaching/data8-project/`
 
-A six-part intro-data-science project for the user's Sierra College Tutor Center role:
+A five-part intro-data-science project for the user's Sierra College Tutor Center role:
 *can you spot a gluten grain by counting amino acids?* Scoped-down slice of project 1.
 
-- `INSTRUCTOR.md` — full spec: 6 parts, per-question answers, rubric, common mistakes.
+- `INSTRUCTOR.md` — full spec: 5 parts, per-question answers, review guidance, common mistakes.
 - `TUTOR_PROJECT.md` — rubric-facing rationale (audience, purpose, CRLA alignment, APA sources).
 - `datascience_vs_pandas.md` — side-by-side reference for the two notebook tracks.
 - `build_dataset.py` → `data/grains.csv` (251 proteins) + `data/grains_mystery*.csv` (18).
 - `build_notebooks.py` → the 4 `.ipynb` (datascience/pandas × project/solutions).
 
-**Conventions:** prediction-weighted (Parts 5–6). Two parallel tracks (`datascience` +
+**Conventions:** prediction-focused (Part 5). Two parallel tracks (`datascience` +
 `pandas`) generated from one source file. Judged on the held-out **mystery set**, not a
 random split (random split is near-saturated). A `check_*` helper after every question,
 including written ones.
 
-**State (2026-09-10):** spec + dataset + rationale done. Parts 0–1 built in both tracks;
-solutions execute clean. User is reviewing Parts 0–1; **Parts 2–6 not built yet.** Regenerate
+**State (2026-09-10):** spec + dataset + rationale done. Parts 0–2 built in both tracks;
+solutions execute clean. User is reviewing Part 2; **Parts 3–5 not built yet.** (Bootstrap part cut; parts run 0–5. The module is unscored.) Regenerate
 notebooks with `python build_notebooks.py`; verify with
 `jupyter nbconvert --to notebook --execute solutions_pandas.ipynb`.
 

@@ -121,12 +121,12 @@ df.sample(n=len(df), replace=True, random_state=...)         # pandas
 
 ```python
 # overlaid histogram of pq_frac by group
-t.hist("pq_frac", group="gluten", bins=np.arange(0, 0.7, 0.02))      # datascience
+t.hist("pq_frac", group="gluten", bins=np.arange(0, 0.76, 0.02))      # datascience
 
 # pandas: use matplotlib directly
 import matplotlib.pyplot as plt
 for label, sub in df.groupby("gluten"):
-    plt.hist(sub["pq_frac"], bins=np.arange(0, 0.7, 0.02), alpha=0.5, label=label)
+    plt.hist(sub["pq_frac"], bins=np.arange(0, 0.76, 0.02), alpha=0.5, label=label)
 plt.legend(); plt.xlabel("pq_frac");
 
 # scatter colored by group
