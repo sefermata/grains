@@ -189,9 +189,16 @@ same convention.
   from a random split of these same numbers into groups of 118 and 133.*
 - **Q3.3** Write a simulation: shuffle the `gluten` column, recompute the difference in
   means, repeat ≥ 5000 times, collect the results.
-- **Q3.4** Histogram of the simulated differences with the observed value marked; compute
-  the empirical p-value. *Answer: no simulated difference comes near the observed ≈ 0.29;
-  p ≈ 0 (report as "< 1/5000").*
+- **Q3.4** Histogram of the simulated differences (`bins=np.arange(-0.10, 0.10, 0.005)`, given)
+  with the observed value marked by a red scatter point; then the p-value **in two steps** —
+  `n_at_least` (the count) and `p_value` (that count over the number of trials). *Answer: the
+  null distribution spans about −0.086 to +0.078, sd ≈ 0.021; the observed 0.2881 is ~13.8 null
+  SDs out, so `n_at_least` is 0 and `p_value` is exactly 0.0.* A follow-up cell makes the point
+  that `0.0` means "below what 5,000 trials can measure", so it is reported as **p < 0.0002**.
+  The two-step split is deliberate: with the correct p-value being exactly 0, a student who
+  forgets to divide also gets 0, and the check cannot tell the two apart from the value alone.
+  Splitting it gives the check a count to verify and gives the "< 1/5000" paragraph a number
+  to point at.
 - **Q3.5** *(written)* What does this p-value let you conclude, and what does it **not**
   tell you? *Answer: the composition gap is not plausibly due to chance labeling; it does
   **not** tell you the effect is large, nor that composition will classify well.*
@@ -199,6 +206,25 @@ same convention.
 Common mistakes: shuffling `pq_frac` instead of the label (equivalent here, but muddles the
 logic); recomputing against the *shuffled* group sizes wrong; using `np.random.shuffle`
 in place on a shared array without copying.
+
+**What the checks do and don't catch (tested against each mistake).** `check_q3_3` catches a
+shuffle that happens *outside* the loop or not at all — both make every trial identical, which
+it flags by distinct-value count — plus fewer than 5,000 trials and a null that fails to center
+near 0. `check_q3_4` catches a missing plot, an unmarked observed value, a miscounted
+`n_at_least`, a p-value outside [0, 1], and the wrong tail. **It cannot catch shuffling
+`pq_frac` instead of the label**, because that is statistically the same test and produces an
+indistinguishable null — if that matters to you, it has to be caught by reading the code.
+
+**Runtime.** The `datascience` track uses the canonical `tbl.sample(with_replacement=False)`
+permutation idiom, which costs ≈ 2.3 ms per trial, so Q3.3 takes about 11 seconds. The pandas
+track shuffles with `np.random.permutation` and finishes in well under a second. The question
+says the wait is expected, so nobody assumes it has hung.
+
+**The pandas index trap.** The pandas hint tells students to shuffle `.values`, not the
+`Series`. `grains['gluten'].sample(frac=1)` does shuffle, but it carries each label's original
+index along, so pandas silently re-aligns it back into the original order the moment it meets
+another column — the simulation then returns the observed difference 5,000 times. The hint
+calls this out explicitly because the failure is invisible rather than noisy.
 
 ## Cut: the bootstrap part (2026-09-16)
 
