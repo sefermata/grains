@@ -1,0 +1,18 @@
+epitope_id,canonical_name,core_9mer,iedb_id,iedb_sequence,iedb_match_type,iedb_n_assays,iedb_n_candidates,iedb_candidate_ids,note
+E01,DQ2.5-glia-a1a,PFPQPELPY,47539,PFPQPELPY,exact_core,1,1,47539,
+E02,DQ2.5-glia-a2,PQPELPYPQ,49047,PQPELPYPQ,exact_core,2,1,49047,
+E03,DQ2.5-glia-w1,PFPQPEQPF,2265304,QPFPQPEQPFPQS,contains_core,2,4,462152;234238;2265304;2265305,"WARNING: IEDB id 2265304 is shared with E06 -- the registered peptide contains more than one panel core, so it does not identify this epitope uniquely. core occurs in 4 registered peptides; chose the one with the most assay records (all ids kept in iedb_candidate_ids)"
+E04,DQ2.5-glia-w2,PQPEQPFPW,2265305,QPFPQPEQPFPWQP,contains_core,4,1,2265305,
+E05,DQ2.5-hor-3,PIPEQPQPY,2265298,PEQPIPEQPQPYPQQ,contains_core,2,1,2265298,
+E06,DQ2.5-sec-2,PQPEQPFPQ,2265304,QPFPQPEQPFPQS,contains_core,2,3,2265304;234238;462152,"WARNING: IEDB id 2265304 is shared with E03 -- the registered peptide contains more than one panel core, so it does not identify this epitope uniquely. core occurs in 3 registered peptides; chose the one with the most assay records (all ids kept in iedb_candidate_ids)"
+E07,DQ2.5-glut-L1,PFSEQEQPV,,,not_found,,0,,"core not registered in IEDB, alone or inside a longer peptide"
+E08,DQ2.5-glia-g1,PQQSFPEQQ,49098,PQQPQQSFPEQQRP,contains_core,1,2,49098;78799,core occurs in 2 registered peptides; chose the one with the most assay records (all ids kept in iedb_candidate_ids)
+E09,DQ8-glia-a1,EGSFQPSQE,139538,LGEGSFQPSQENP,contains_core,2,10,745559;745635;745642;58010;114227;100441;139538;165237;420753;558548,core occurs in 10 registered peptides; chose the one with the most assay records (all ids kept in iedb_candidate_ids)
+E10,DQ8-glia-g1,EQPQQPFPQ,172752,PQPEQPQQPFPQPQ,contains_core,5,2,165179;172752,core occurs in 2 registered peptides; chose the one with the most assay records (all ids kept in iedb_candidate_ids)
+E11,DQ2.5-ave-1a,PYPEQEEPF,,,not_found,,0,,"core not registered in IEDB, alone or inside a longer peptide"
+E12,DQ2.5-ave-1b,PYPEQEQPF,,,not_found,,0,,"core not registered in IEDB, alone or inside a longer peptide"
+C01,alpha-gliadin-33mer,,,,no_core,,0,,row has no core_9mer (33-mer context row); not looked up
+C02,alpha-gliadin-33mer-native,,,,no_core,,0,,row has no core_9mer (33-mer context row); not looked up
+N01,DQ2.5-glia-a1a-native,PFPQPQLPY,109654,PFPQPQLPY,exact_core,23,2,47541;109654,
+N02,DQ2.5-glia-a2-native,PQPQLPYPQ,137260,PQPQLPYPQ,exact_core,30,2,49061;137260,
+N03,DQ2.5-glia-w2-native,PQPQQPFPW,238877,PQPQQPFPW,exact_core,5,1,238877,

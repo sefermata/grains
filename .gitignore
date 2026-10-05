@@ -27,6 +27,10 @@ data/processed/*
 # accession + residue range per peptide, plus the deamidation sites it confirms. A result,
 # like targets.csv and rmsd_baseline.csv — keep it in version control.
 !data/processed/peptide_uniprot_map.csv
+# peptide_iedb_map.csv is the Checkpoint 1 verification result for checklist step 2
+# (IEDB epitope ids + every candidate considered) — a result, so keep it. The .iedb_cache.json
+# beside it is just a request cache and stays ignored.
+!data/processed/peptide_iedb_map.csv
 
 # Large model / structure outputs
 results/structures/

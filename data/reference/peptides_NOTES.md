@@ -3,6 +3,52 @@
 `peptides.csv` is a **working draft**. Before Checkpoint 1 is "done", every row's `verified`
 field must read `yes`, cross-checked against a primary source.
 
+## IEDB lookup, 2026-10-05 — checklist step 2 done
+
+`grains.iedb` resolves each core to an IEDB epitope id; `iedb_id` is now a column in
+`peptides.csv`, with the full result (all candidates per row) in
+`data/processed/peptide_iedb_map.csv`. **12/15 cored rows resolved.** Responses are cached on
+disk, so re-runs cost no requests.
+
+Two lookups, because neither covers the panel alone. An **exact match on `core_9mer`** hits
+when the epitope is registered as the bare 9-mer (E01 → 47539). Otherwise a **contains-search**
+finds the longer peptide that was actually synthesised and assayed, with our core inside it.
+Exact search on `extended_sequence` finds nothing for any row — our window is cut from the gene,
+not copied from whatever length a given lab used.
+
+**Candidate choice is specificity-first:** shortest registered peptide containing the core,
+then most assays, then lowest id. The first attempt ranked by assay count instead and gave E03
+*and* E06 the same id — IEDB 462152, a 24-residue ω-gliadin repeat
+(`PQPEQPFPQPEQPFPQPEQPFPQP`) containing both cores. An id shared between two rows identifies
+neither, so the rule now prefers the most specific entry. A duplicate-id check runs regardless
+and writes a warning into the output.
+
+### E03 and E06 are nearly the same peptide — a real result, not a lookup artifact
+
+The duplicate warning still fires for E03/E06, and investigating it showed the cause is
+biological:
+
+- **DQ2.5-glia-ω1** (E03, wheat ω-gliadin) core `PFPQPEQPF`
+- **DQ2.5-sec-2** (E06, rye secalin) core `PQPEQPFPQ`
+
+These **overlap by 7 of 9 residues** (`PQPEQPF`) — two offset registers of the same repetitive
+prolamin motif. Every one of E06's three IEDB candidates also contains E03's core; no
+registered peptide separates them. So the shared id is correct and unavoidable, and it is
+recorded with a warning rather than papered over.
+
+Worth noting this is part of *why rye is toxic*: rye secalin carries essentially the same
+DQ2.5 epitope motif as wheat ω-gliadin. That is a point for the writeup, not a problem.
+
+**Carry forward to Checkpoints 3–4:** E03 and E06 will model and score almost identically, so
+they are **not independent observations**. Counting both toward a toxic-vs-safe comparison
+overstates the sample. Either treat them as one observation, or report the statistics with and
+without E06 and say which was used.
+
+**Three rows unresolved** — E07 (DQ2.5-glut-L1, LMW-glutenin), E11 and E12 (the two avenins).
+Their cores are not registered in IEDB alone or inside any longer peptide. These are the less
+studied members of the panel, so absence from the database is plausible rather than suspicious;
+left blank and stated rather than filled with a near-miss.
+
 ## UniProt mapping, 2026-10-05 — checklist steps 3 and 4 done
 
 `grains.map_peptides` locates every peptide in the downloaded proteomes and writes
