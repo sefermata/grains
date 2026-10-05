@@ -184,6 +184,19 @@ def core_window(sequence: str, core: str) -> list[int] | None:
     return list(range(start, start + len(core)))
 
 
+def parser_for(path: Path):
+    """Biopython parser matching the file extension.
+
+    AlphaFold Server returns mmCIF; the crystal structures here are legacy PDB. Both parse
+    into the same Structure object, so everything downstream is format-agnostic.
+    """
+    if path.suffix.lower() in (".cif", ".mmcif"):
+        from Bio.PDB import MMCIFParser
+
+        return MMCIFParser(QUIET=True)
+    return PDBParser(QUIET=True)
+
+
 def compare(mobile: ComplexSpec, target: ComplexSpec, core: str = E01_CORE) -> dict:
     """Fit `mobile` onto `target` by their MHC chains; report where the peptide lands.
 
@@ -191,9 +204,10 @@ def compare(mobile: ComplexSpec, target: ComplexSpec, core: str = E01_CORE) -> d
     peptide and over the `core` window, all in Angstroms, with the residue counts each
     number is based on (an RMSD without its N is not reportable).
     """
-    parser = PDBParser(QUIET=True)
-    mobile_structure = parser.get_structure(mobile.label, mobile.pdb_path)
-    target_structure = parser.get_structure(target.label, target.pdb_path)
+    mobile_structure = parser_for(mobile.pdb_path).get_structure(
+        mobile.label, mobile.pdb_path)
+    target_structure = parser_for(target.pdb_path).get_structure(
+        target.label, target.pdb_path)
 
     # Refuse to report an RMSD for chains that aren't actually a complex (see verify_pairing).
     verify_pairing(mobile_structure, mobile)
@@ -286,6 +300,70 @@ FIELDNAMES = [
     "n_peptide_ca", "peptide_rmsd_A", "n_core_ca", "core_rmsd_A",
     "mobile_peptide_seq", "target_peptide_seq", "note",
 ]
+
+
+AF_MODEL_DIR = config.RAW / "models" / "fold_dq2_5_e01_validation_1s9v"
+AF_MODEL_GLOB = "fold_dq2_5_e01_validation_1s9v_model_*.cif"
+
+# Structures AlphaFold Server used as templates for this job, read from the returned
+# templates/ directory. 1S9V is deliberately absent, which is what keeps the validation from
+# being circular; 4OZI is present for the peptide chain, which is a caveat to state rather
+# than hide -- see validate_models().
+AF_TEMPLATES = {"6px6", "4ozi", "4d8p", "6dig", "6u3m", "3pl6", "1uvq", "1iak", "4grl"}
+
+
+def validate_models(model_dir: Path | None = None) -> list[dict]:
+    """Compare every AlphaFold model against both crystal copies of 1S9V and 4OZI.
+
+    Checkpoint 2's deliverable. Each model is compared with the validation target (1S9V,
+    *not* an AlphaFold template) and with 4OZI (which *was* a template for the peptide
+    chain). Reporting both is the point: if the model had simply recalled its template it
+    would sit at 4OZI's own distance from 1S9V (~1.1 A core) and be much closer to 4OZI than
+    to 1S9V. Being roughly equidistant from the two, and closer to each than they are to each
+    other, is the signature of a consensus prediction instead.
+    """
+    model_dir = model_dir or AF_MODEL_DIR
+    paths = sorted(model_dir.glob(AF_MODEL_GLOB))
+    if not paths:
+        raise FileNotFoundError(
+            f"no AlphaFold models in {model_dir} (expected {AF_MODEL_GLOB}) -- "
+            "see docs/manual_steps.md for the submission and download steps"
+        )
+
+    targets = [
+        (S9V_COPY1, "validation target (not an AlphaFold template)"),
+        (S9V_COPY2, "validation target (not an AlphaFold template)"),
+        (OZI_COPY1, "WAS an AlphaFold template for the peptide chain"),
+        (OZI_COPY2, "WAS an AlphaFold template for the peptide chain"),
+    ]
+
+    rows: list[dict] = []
+    for path in paths:
+        label = path.stem.replace("fold_dq2_5_e01_validation_1s9v_", "AF_")
+        model = ComplexSpec(label, path, "A", "B", "C")
+        for target, note in targets:
+            row = compare(model, target)
+            row["note"] = note
+            rows.append(row)
+
+    out_path = config.PROCESSED / "rmsd_validation.csv"
+    with out_path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDNAMES)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"{'model':<14}{'target':<12}{'groove':>8}{'peptide':>9}{'core':>8}")
+    for row in rows:
+        print(f"{row['mobile']:<14}{row['target']:<12}"
+              f"{row['mhc_fit_rmsd_A']:>8.2f}{row['peptide_rmsd_A']:>9.2f}"
+              f"{row['core_rmsd_A']:>8.2f}")
+
+    against_1s9v = [r["core_rmsd_A"] for r in rows if r["target"].startswith("1S9V")]
+    against_4ozi = [r["core_rmsd_A"] for r in rows if r["target"].startswith("4OZI")]
+    print(f"\nwrote {out_path}")
+    print(f"core RMSD vs 1S9V (unseen): {min(against_1s9v):.2f}-{max(against_1s9v):.2f} A")
+    print(f"core RMSD vs 4OZI (template): {min(against_4ozi):.2f}-{max(against_4ozi):.2f} A")
+    return rows
 
 
 def run() -> list[dict]:

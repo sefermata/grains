@@ -55,8 +55,28 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
       construct already *is* the groove+Ig ectodomain, no domain-boundary guessing needed) —
       not from full-length UniProt entries. Regression-tested against a real 7-residue disordered
       loop gap in chain B that a naive CA-atom walk would silently splice across.
-- [~] Submit the validation peptide + HLA chains to AlphaFold Server; retrieve the model.
-      **2026-10-05: submission file written** — `data/processed/alphafold_validation_job.json`
+- [x] Submit the validation peptide + HLA chains to AlphaFold Server; retrieve the model.
+      **2026-10-05: done — the model reproduces the crystal structure.** 5 models returned,
+      all pTM/ipTM 0.91. Core CA RMSD to 1S9V: **0.59–0.73 Å**, i.e. *better* than two
+      independent crystal structures of the same complex agree with each other (0.91–1.16 Å),
+      sitting between that ceiling and the 0.24 Å within-crystal refinement floor. Groove fit
+      0.69–0.89 Å. **The pipeline reproduces a known complex — Checkpoint 2's question is
+      answered yes.**
+
+      **Not circular, and checked rather than assumed:** 1S9V is *not* among the templates
+      AlphaFold used (6px6, 4ozi, 4d8p, 6dig, 6u3m, 3pl6, 1uvq, 1iak, 4grl). **4OZI is**, for
+      the peptide chain — a caveat worth stating, so it was tested rather than waved at. Had
+      the model simply recalled its template it would sit at 4OZI's own distance from 1S9V
+      (~1.1 Å core) and be much closer to 4OZI than to 1S9V. Measured: it is roughly
+      *equidistant* (core 0.59–0.73 Å to 1S9V, 0.48–0.73 Å to 4OZI) while the two crystals are
+      0.91–1.16 Å apart from each other — a consensus prediction, not template recall. It also
+      fits the binary 1S9V groove (0.69–0.89 Å) far better than the TCR-bound 4OZI groove
+      (1.53–1.67 Å), i.e. it reproduced the binary conformation rather than the ternary one it
+      was templated from.
+
+      Reproduce with `PYTHONPATH=src python -c "from grains.superpose import validate_models;
+      validate_models()"` → `data/processed/rmsd_validation.csv`.
+      Submission prep (same day): **submission file written** — `data/processed/alphafold_validation_job.json`
       (3 chains: DQA1\*05:01 193 aa + DQB1\*02:01 198 aa + peptide `LQPFPQPELPY`, the
       sequence as deposited in 1S9V chain C so the RMSD needs no sequence caveat).
       Format confirmed against AlphaFold Server's own JSON spec (`alphafoldserver` dialect,
@@ -121,6 +141,14 @@ this checkpoint's AlphaFold Server usage scoped to exactly that: one validation 
 RMSD comparison, nothing downstream of it feeds a binding score.
 
 **Present:** overlay figure (model vs crystal) + RMSD numbers + a short method paragraph.
+**Figure done 2026-10-05:** `results/figures/af_vs_1S9V_overlay.png` (+ `_dark.png`), from
+`grains.render_overlay`. Two panels: the superposed peptide backbones, and per-residue CA
+deviation against the two measured reference levels. The per-residue panel carries the real
+result — deviation is *lowest in the 9-mer core* (0.13–0.40 Å, at or below the within-crystal
+floor) and highest at the two flanking termini (0.83, 1.18 Å). That is exactly the MHC class II
+expectation: the core is clamped in the groove while the flanks extend into solvent, so the
+model is most accurate precisely where the binding happens. The reverse pattern would have been
+a warning.
 *If AlphaFold Server access is slow:* present the PANDORA result and the submission plan.
 
 **Status 2026-10-05:** the measuring apparatus and its interpretive baseline are done and
