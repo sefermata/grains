@@ -66,11 +66,22 @@ Edit line 2 instead.
 ### Step 4 — verify
 
 ```bash
-cd ~/grains
-PYTHONPATH=src python -c "from grains.modeling import pandora_available; print(pandora_available())"
+cd ~/grains && PYTHONPATH=src python -c "from grains.modeling import pandora_available; print(pandora_available())"
 ```
 
-Expect `(True, 'PANDORA and MODELLER available')`. Anything else prints the reason.
+Expect `(True, 'PANDORA and MODELLER 10.8 available, license valid')`. Anything else prints
+the reason and what to do about it. The check constructs a `modeller.Environ()` rather than
+just importing modeller, because importing doesn't validate the license.
+
+**The `cd` is not optional, and leaving it off fails in a confusing way.** This repo's
+directory is named `grains` and so is the package inside it, so running Python from `~` puts
+`/Users/sefoster` on `sys.path`, where the *repo folder* `grains/` gets picked up as an
+implicit namespace package. `import grains` then succeeds pointing at the repo root, and
+`grains.modeling` fails with `ModuleNotFoundError: No module named 'grains.modeling'` — which
+reads like a missing module rather than a wrong working directory. (`PYTHONPATH=src` resolves
+relative to wherever you are, so from `~` it points at a nonexistent `~/src` and does nothing.)
+Diagnose it by printing `grains.__file__`: `None` means you've got the namespace-package
+shadow, not the real package.
 
 ### Watch the disk
 

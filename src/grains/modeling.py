@@ -36,6 +36,8 @@ predicted structure to data/raw/models/ and compare it with:
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 from pathlib import Path
 
@@ -152,28 +154,49 @@ def pandora_available() -> tuple[bool, str]:
     """Whether the PANDORA route can run here, and why not when it can't.
 
     PANDORA needs MODELLER, which is free for academic use but requires a license key
-    (registration at salilab.org/modeller/registration.html). Without the key MODELLER
-    imports but refuses to run, so both are checked.
+    (registration at salilab.org/modeller/registration.html).
+
+    The license is checked by constructing a `modeller.Environ()`, not by importing
+    modeller. Importing is not a sufficient test: MODELLER holds its key in
+    `modlib/modeller/config.py`, and whether a bad key fails at import or only at first
+    use is not something to rely on -- `Environ()` is the call that actually validates it.
+    A readiness check that answers "ready" against an unusable license is worse than no
+    check, because the failure then surfaces somewhere further down the pipeline.
     """
     try:
-        import modeller  # noqa: F401
+        import modeller
     except ImportError as exc:
         return False, (
             "MODELLER is not installed. Install it and PANDORA with:\n"
+            "    export KEY_MODELLER='your-key'   # before installing, see docs/manual_steps.md\n"
             "    conda install -y -c salilab modeller\n"
             "    pip install csb-pandora\n"
-            "then set the license key you get from "
-            f"https://salilab.org/modeller/registration.html ({exc})"
+            "Get a key from https://salilab.org/modeller/registration.html "
+            f"({exc})"
         )
-    except Exception as exc:  # pragma: no cover - depends on local license state
-        return False, f"MODELLER is installed but not usable: {exc}"
+    except BaseException as exc:  # MODELLER may exit rather than raise on a bad key
+        return False, f"MODELLER is installed but could not be imported: {exc!r}"
+
+    # Environ() prints a banner to stdout; swallow it so a readiness check stays quiet.
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            modeller.Environ()
+    except BaseException as exc:
+        return False, (
+            f"MODELLER {modeller.__version__} is installed but its license is not valid "
+            f"({exc!r}). Put your key on the `license` line of\n"
+            "    /opt/anaconda3/lib/modeller-10.8/modlib/modeller/config.py\n"
+            "replacing the XXXX placeholder. Note config.py takes precedence over the "
+            "KEY_MODELLER environment variable, so exporting that after installing has "
+            "no effect -- see docs/manual_steps.md."
+        )
 
     try:
         import PANDORA  # noqa: F401
     except ImportError as exc:
-        return False, f"MODELLER is available but PANDORA is not (pip install csb-pandora): {exc}"
+        return False, f"MODELLER is usable but PANDORA is not (pip install csb-pandora): {exc}"
 
-    return True, "PANDORA and MODELLER available"
+    return True, f"PANDORA and MODELLER {modeller.__version__} available, license valid"
 
 
 def main() -> None:
