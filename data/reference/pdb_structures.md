@@ -29,6 +29,44 @@ validation structure if/when a DQ8 cross-check is wanted (matches E09).
 Rendered: `results/figures/1S9V_dq25_groove.png` (CA backbone trace, peptide in red,
 nestled between the alpha/beta chains — see `src/grains/render_structure.py`).
 
+## Downloads
+
+`data/raw/pdb/` is git-ignored; the three structures the pipeline currently uses:
+
+```bash
+mkdir -p data/raw/pdb
+for id in 1S9V 2NNA 4OZI; do
+  curl -sS -o "data/raw/pdb/$id.pdb" "https://files.rcsb.org/download/$id.pdb"
+done
+```
+
+`1S9V` is the validation target, `4OZI` the second structure in the RMSD baseline, and
+`2NNA` the DQ8 equivalent held for a possible cross-check.
+
+## Chain pairing: do not trust chain-ID order (found 2026-10-05)
+
+Both validation structures hold **two copies** of the complex in the asymmetric unit, and
+the chain lettering groups them differently in each:
+
+| PDB | Copy 1 (α / β / peptide) | Copy 2 (α / β / peptide) |
+|-----|--------------------------|--------------------------|
+| `1S9V` | A / B / **C** | D / E / **F** |
+| `4OZI` | A / B / **J** | C / D / **I** |
+
+**4OZI's peptide chains are the reverse of what the lettering suggests**: chain **J** binds
+MHC A/B and chain **I** binds C/D. Verified by contact distance — a bound peptide's closest
+CA is ~5 Å from both MHC chains, while the other copy's peptide is 24–30 Å away.
+
+This matters because getting it wrong is silent. Pairing A/B with I superposes the groove
+perfectly well (1.4 Å) and then measures a peptide belonging to the neighboring complex,
+giving a peptide RMSD of ~62 Å — a wrong answer that arrives looking like a computed result
+rather than an error. `grains.superpose.verify_pairing()` now checks the contact distance and
+raises on any spec whose peptide isn't actually in its groove; `tests/test_superpose.py`
+keeps the 4OZI A/B+I combination as an explicit regression test.
+
+Same lesson as the `fetch_hla.py` disordered-loop gap: when a structure file can quietly hand
+you a plausible wrong number, assert the thing you're assuming.
+
 ## HLA-DQ2.5 + gluten peptide (primary references)
 
 | PDB | Peptide (deposited) | Epitope match | has_TCR | Resolution | Reference |

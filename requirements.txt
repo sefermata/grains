@@ -12,6 +12,15 @@ biopython>=1.84
 # Added at later checkpoints (kept here so the list is complete):
 #   prodigy-prot>=2.1      # binding-affinity scoring from a complex structure (Checkpoint 3)
 #   freesasa>=2.2          # buried surface area (Checkpoint 3)
+#
+# Structure modeling (Checkpoint 2/3) -- NOT pip-installable as a pair, so not listed above:
+#   modeller 10.8          # conda only: `conda install -c salilab modeller`
+#                          # Requires a free academic license key; register at
+#                          # https://salilab.org/modeller/registration.html
+#   csb-pandora>=0.9       # `pip install csb-pandora` -- imports MODELLER, so install that
+#                          # first. PANDORA is the ONLY modeling route allowed to feed the
+#                          # scoring step (AlphaFold Server ToS; see src/grains/modeling.py).
+# Check readiness with: PYTHONPATH=src python -c "from grains.modeling import pandora_available; print(pandora_available())"
 
 # Dev
 pytest>=8.0

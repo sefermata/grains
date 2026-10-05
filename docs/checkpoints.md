@@ -55,11 +55,63 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
       construct already *is* the groove+Ig ectodomain, no domain-boundary guessing needed) —
       not from full-length UniProt entries. Regression-tested against a real 7-residue disordered
       loop gap in chain B that a naive CA-atom walk would silently splice across.
-- [ ] Submit the validation peptide + HLA chains to AlphaFold Server; retrieve the model.
-- [ ] Superpose model on the crystal structure (Biopython `Superimposer` or ChimeraX
+- [~] Submit the validation peptide + HLA chains to AlphaFold Server; retrieve the model.
+      **2026-10-05: submission file written** — `data/processed/alphafold_validation_job.json`
+      (3 chains: DQA1\*05:01 193 aa + DQB1\*02:01 198 aa + peptide `LQPFPQPELPY`, the
+      sequence as deposited in 1S9V chain C so the RMSD needs no sequence caveat).
+      Format confirmed against AlphaFold Server's own JSON spec (`alphafoldserver` dialect,
+      version 1). No PTM declared for the deamidated residue — TG2 turns Gln into Glu, and
+      Glu is a standard amino acid, so it's just the `E` in the sequence.
+      **Blocked on a manual upload**: AlphaFold Server has no public API, so the job has to
+      go through the web UI by hand (bulk-upload/import JSON), then the mmCIF comes back to
+      `data/raw/models/`.
+- [x] Superpose model on the crystal structure (Biopython `Superimposer` or ChimeraX
       `matchmaker`); report backbone RMSD for (a) whole complex, (b) peptide core.
+      **2026-10-05: `src/grains/superpose.py` written and the crystal-vs-crystal baseline
+      measured** (`data/processed/rmsd_baseline.csv`). An RMSD is uninterpretable on its own
+      — "is 1.5 Å good?" has no answer without knowing how well crystal structures of the
+      same complex agree with *each other* — so the noise floor was measured first, from
+      structures alone, before any model exists:
+
+      | Comparison | Groove fit | Peptide | E01 core |
+      |---|---|---|---|
+      | 1S9V copy 1 vs 2 (same crystal, 2.2 Å) | 0.40 Å | 0.30 Å | **0.24 Å** |
+      | 4OZI copy 1 vs 2 (same crystal, 3.2 Å) | 0.75 Å | 0.64 Å | **0.57 Å** |
+      | 1S9V vs 4OZI (independent depositions) | 1.40 Å | 1.14 Å | **1.16 Å** |
+      | 1S9V vs 4OZI (second copies) | 0.92 Å | 0.88 Å | **0.91 Å** |
+
+      So: **a model within ~1.2 Å on the E01 core has matched experimental reproducibility**;
+      ~0.25 Å is the refinement-noise floor and nothing can be expected to beat it. Beyond
+      ~2 Å the model disagrees with the crystal more than independent crystals of the same
+      complex disagree with each other.
+
+      Protocol: fit on the MHC groove (α+β CA atoms), then measure the peptide *where it
+      lands*. Never re-fit on the peptide — that reports the peptide's internal shape while
+      discarding whether it sits in the same place in the groove, which is the whole question.
+      Residue correspondence is by sequence alignment, never residue number (the α chains
+      carry insertion codes; the peptide is numbered 1–11 in 1S9V but 2–12 in 4OZI).
+
+      **Bonus finding, relevant to scope:** the peptide conformation barely changes between
+      the binary complex (1S9V, no TCR) and the TCR-bound one (4OZI) — ~1 Å on the core,
+      within the cross-deposition spread. That's direct evidence for the v1 scope decision to
+      model peptide–MHC without the TCR: the TCR is not reshaping the bound peptide.
 - [ ] Try the CPU-only homology route as a cross-check (PANDORA) on the same peptide.
-- [ ] Write `src/grains/modeling.py` wrapping "sequence(s) in → model file out" for both routes.
+      **Blocked 2026-10-05:** neither PANDORA nor MODELLER is installed. `csb-pandora` 0.9 is
+      on PyPI and `modeller` 10.8 has a py313 build on the `salilab` conda channel, so the
+      install path is clear, but **MODELLER needs a free academic license key** (register at
+      <https://salilab.org/modeller/registration.html>) — a manual step. This is the critical
+      path: Checkpoint 3 locks PANDORA in as the *only* route for complexes that get scored.
+      `grains.modeling.pandora_available()` reports readiness and the exact install commands.
+- [x] Write `src/grains/modeling.py` wrapping "sequence(s) in → model file out" for both routes.
+      **2026-10-05:** AlphaFold-Server half is done and tested (builds the submission JSON).
+      PANDORA half is an availability check + install instructions until the license key
+      exists; the model-running call is deliberately not written blind against an API that
+      can't be executed here yet.
+      The module also turns the ToS constraint below into a **runtime guard**,
+      `assert_scorable(route)`: Checkpoint 3's scoring step calls it per complex, and it
+      refuses any non-PANDORA route (default-deny, so an unvetted new route isn't scorable
+      just by being new). The failure mode it prevents is invisible — a PRODIGY number
+      computed from an AlphaFold model looks exactly like a valid one.
 
 **AlphaFold Server Terms-of-Service constraint (found 2026-09-21, see Checkpoint 3):**
 AlphaFold Server output may be compared to the crystal structure by RMSD here — that's a pure
@@ -70,6 +122,11 @@ RMSD comparison, nothing downstream of it feeds a binding score.
 
 **Present:** overlay figure (model vs crystal) + RMSD numbers + a short method paragraph.
 *If AlphaFold Server access is slow:* present the PANDORA result and the submission plan.
+
+**Status 2026-10-05:** the measuring apparatus and its interpretive baseline are done and
+tested; what's missing is the two models to put through it, each blocked on a manual step
+(AlphaFold Server upload; MODELLER license key). The crystal-vs-crystal baseline is
+presentable on its own — it's the number that makes any later RMSD mean something.
 
 ---
 

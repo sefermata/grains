@@ -1,0 +1,5 @@
+comparison,mobile,target,n_mhc_ca,mhc_fit_rmsd_A,n_peptide_ca,peptide_rmsd_A,n_core_ca,core_rmsd_A,mobile_peptide_seq,target_peptide_seq,note
+1S9V_ABC -> 1S9V_DEF,1S9V_ABC,1S9V_DEF,357,0.404,11,0.296,9,0.244,LQPFPQPELPY,LQPFPQPELPY,same crystal (1S9V ASU copies) -- refinement noise floor
+4OZI_ABJ -> 4OZI_CDI,4OZI_ABJ,4OZI_CDI,361,0.749,11,0.64,9,0.571,QPFPQPELPYP,QPFPQPELPYP,same crystal (4OZI ASU copies) at 3.2 A
+1S9V_ABC -> 4OZI_ABJ,1S9V_ABC,4OZI_ABJ,358,1.404,10,1.14,9,1.163,LQPFPQPELPY,QPFPQPELPYP,independent depositions; binary vs TCR-bound
+1S9V_DEF -> 4OZI_CDI,1S9V_DEF,4OZI_CDI,357,0.919,10,0.877,9,0.909,LQPFPQPELPY,QPFPQPELPYP,"independent depositions, second copy of each"

@@ -19,6 +19,10 @@ data/processed/*
 # targets.csv is hand-verified against rcsb.org (Checkpoint 1), not mechanically
 # regenerated — keep it in version control like the other reference/ verification work.
 !data/processed/targets.csv
+# rmsd_baseline.csv is a Checkpoint 2 *result*, not an intermediate: it's the experimental
+# noise floor that makes every later model-vs-crystal RMSD interpretable. Regenerating it
+# needs the (git-ignored) PDB downloads, so keep the numbers in version control.
+!data/processed/rmsd_baseline.csv
 
 # Large model / structure outputs
 results/structures/
