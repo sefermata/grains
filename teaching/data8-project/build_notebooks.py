@@ -161,6 +161,7 @@ SETUP_PD = r"""
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from IPython.display import display   # shows a table mid-cell, not just as the last line
 %matplotlib inline
 
 np.random.seed(8)   # keep every run reproducible (Data 8, naturally)
@@ -649,7 +650,7 @@ def part1(track: str, version: str) -> list[dict]:
             (= `p_frac + q_frac`), computed from the `sequence` column with the functions
             you just wrote.
 
-            **Hints:** `with_columns` on its returns a *new* table rather than changing `grains` itself. Make sure the result actually gets saved back to `grains`! A `Table` also
+            **Hints:** `with_columns` on its own returns a *new* table rather than changing `grains` itself. Make sure the result actually gets saved back to `grains`! A `Table` also
             has an `apply` method that runs a function down every value in one column; look
             it up in the `datascience` docs if you haven't used it yet.
         """))
@@ -696,7 +697,7 @@ def part1(track: str, version: str) -> list[dict]:
                 grains['q_frac'] = ...
                 grains['pq_frac'] = ...
 
-                grains[['seq_id', 'grain', 'gluten', 'p_frac', 'q_frac', 'pq_frac']].head(5)
+                display(grains[['seq_id', 'grain', 'gluten', 'p_frac', 'q_frac', 'pq_frac']].head(5))
                 check_q1_3(grains)
             """,
             solution=r"""
@@ -704,7 +705,7 @@ def part1(track: str, version: str) -> list[dict]:
                 grains['q_frac'] = grains['sequence'].apply(glutamine_fraction)
                 grains['pq_frac'] = grains['p_frac'] + grains['q_frac']
 
-                grains[['seq_id', 'grain', 'gluten', 'p_frac', 'q_frac', 'pq_frac']].head(5)
+                display(grains[['seq_id', 'grain', 'gluten', 'p_frac', 'q_frac', 'pq_frac']].head(5))
                 check_q1_3(grains)
             """,
         ))
@@ -727,8 +728,8 @@ def part1(track: str, version: str) -> list[dict]:
             short_p_count = ...
             short_p_frac  = ...
 
-            print('longest :', long_p_count, 'P out of', len(longest_seq), '->', long_p_frac)
-            print('shortest:', short_p_count, 'P out of', len(shortest_seq), '->', short_p_frac)
+            print('longest  protein:', len(longest_seq), 'residues,', long_p_count, 'are P  ->  proline fraction', round(long_p_frac, 3))
+            print('shortest protein:', len(shortest_seq), 'residues,', short_p_count, 'are P  ->  proline fraction', round(short_p_frac, 3))
             check_q1_4(longest_seq, shortest_seq, long_p_count, long_p_frac, short_p_count, short_p_frac)
         """,
         solution=r"""
@@ -737,15 +738,19 @@ def part1(track: str, version: str) -> list[dict]:
             short_p_count = count_aa(shortest_seq, 'P')
             short_p_frac  = proline_fraction(shortest_seq)
 
-            print('longest :', long_p_count, 'P out of', len(longest_seq), '->', long_p_frac)
-            print('shortest:', short_p_count, 'P out of', len(shortest_seq), '->', short_p_frac)
+            print('longest  protein:', len(longest_seq), 'residues,', long_p_count, 'are P  ->  proline fraction', round(long_p_frac, 3))
+            print('shortest protein:', len(shortest_seq), 'residues,', short_p_count, 'are P  ->  proline fraction', round(short_p_frac, 3))
             check_q1_4(longest_seq, shortest_seq, long_p_count, long_p_frac, short_p_count, short_p_frac)
         """,
     ))
     cells.append(md(r"""
-        You want to say which of these two proteins is *more proline-rich*. The raw counts
-        and the fractions can point to different answers. Which number answers that question
-        fairly, and why? Write one sentence in `answer_q1_4`.
+        Look at the four numbers you just printed. You want to say which of these two
+        proteins is **more proline-rich** — and the two measures disagree. The raw count
+        picks one protein; the proline fraction picks the other.
+
+        So the question is not which protein wins, but which *measure* settles it fairly:
+        the raw count, or the fraction? Write one sentence in `answer_q1_4` saying which one
+        you would trust here, and why.
     """))
     cells.append(solvable(
         version,
@@ -777,9 +782,9 @@ def part2(track: str, version: str) -> list[dict]:
         ## Part 2 — Exploration
 
         Part 1 turned every protein into numbers. Before running any test or building any
-        model, look at those numbers. Making pictures and summaries first is called
-        **exploration**: you aren't proving anything yet, just seeing what the data looks like
-        and noticing anything odd. (Part 3 asks whether what you see is real.)
+        model, let's *look* at those numbers. Making pictures and summaries first is called
+        **exploration** - you aren't proving anything yet, just seeing what the data looks like
+        and noticing anything odd.
     """)]
 
     # ---- Q2.1: overlaid histogram ------------------------------------------
@@ -788,16 +793,36 @@ def part2(track: str, version: str) -> list[dict]:
 
         A **histogram** shows how a set of numbers is spread out. It cuts the number line into
         **bins** (ranges) and shows how many values fall in each one. An **overlaid** histogram
-        draws two groups on the same axes so you can compare them directly.
+        draws both groups on one chart, one set of bars per group, so you can compare them
+        directly.
 
         Draw one for `pq_frac`, with one group per `gluten` value (`'yes'` and `'no'`).
 
         First choose your bins. `np.arange(start, stop, step)` makes a list of bin edges from
         `start` up to (but not including) `stop`, counting by `step`. For example,
-        `np.arange(0, 1, 0.25)` gives `0, 0.25, 0.5, 0.75`. Pick edges that start at 0 and go
-        **past** the largest `pq_frac` value, with somewhere between 10 and 50 bins. Save the
-        edges as `my_bins`.
+        `np.arange(0, 1, 0.25)` gives `0, 0.25, 0.5, 0.75`.
+
+        Two things to settle. First, `stop` has to land **past** the largest `pq_frac`, or the
+        proteins above it get left out of the picture — so run the cell below to see the range
+        the column actually covers, rather than trying to remember it.
+
+        Second, `step`, which is the width of one bin. **There is no single correct width.**
+        It's a choice about how to show the data, not a number you can solve for, so nothing
+        here will tell you the answer. Use `step = 0.02` to start: over a range of about 0.7
+        that's roughly 35 bins, fine enough to show the shape without looking like static.
+        Save the edges as `my_bins`.
+
+        Once the plot works, come back and try `0.05` and `0.005`. Too few bins and the two
+        humps smear into one; too many and every bin holds one or two proteins and the shape
+        disappears into spikes. Seeing that trade-off is the point — the check accepts anything
+        from 10 to 50 bins, and that range is wide precisely because the picture barely changes
+        across it.
     """))
+    pq_col = "grains.column('pq_frac')" if track == "ds" else "grains['pq_frac']"
+    cells.append(code(
+        f"# Run this first — it tells you what range your bins have to cover.\n"
+        f"print('pq_frac runs from', round({pq_col}.min(), 3), 'to', round({pq_col}.max(), 3))"
+    ))
     if track == "ds":
         cells.append(md(r"""
             **Hint:** `grains.hist(column, group=..., bins=...)` draws one histogram per value of
@@ -910,9 +935,21 @@ def part2(track: str, version: str) -> list[dict]:
             """,
         ))
     cells.append(md(r"""
-        Take a moment to look at both plots before you move on. Where do the two groups overlap?
-        Do any dots from the `no` group sit among the `yes` dots?
+        Look at both plots together before you move on. Write one or two sentences in
+        `answer_q2_2`: where do the two groups overlap, and do any dots from the `no` group
+        sit up among the `yes` dots?
     """))
+    cells.append(solvable(
+        version,
+        scaffold="answer_q2_2 = 'your answer here'\n\ncheck_written('Q2.2 written', answer_q2_2)",
+        solution=(
+            "answer_q2_2 = (\n"
+            "    'The two clusters do not separate cleanly: the yes group sits higher on both '\n"
+            "    'p_frac and q_frac, but a band of no dots reaches up into its lower-left edge. '\n"
+            "    'Those overlapping dots are almost all maize and sorghum, with a couple of oats.'\n"
+            ")\n\ncheck_written('Q2.2 written', answer_q2_2)"
+        ),
+    ))
 
     # ---- Q2.3: group means --------------------------------------------------
     cells.append(md(r"""
@@ -925,16 +962,16 @@ def part2(track: str, version: str) -> list[dict]:
     """))
     if track == "ds":
         cells.append(md(r"""
-            **Hint:** `t.group('gluten', np.mean)` takes the mean of *every* other column in
-            `t`, so use `select` first to keep only the columns you want. The new columns are
-            named with the word `mean` added, like `p_frac mean`.
+            **Hint:** `table.group('gluten', np.mean)` takes the mean of every other column in
+            `table`, so use `select` first to keep just the columns you want. The new columns
+            come back renamed with `mean` added, like `p_frac mean`.
         """))
         cells.append(solvable(
             version,
-            scaffold="group_means = ...\ngroup_means\n\ncheck_q2_3(group_means)",
+            scaffold="group_means = ...\ngroup_means.show()\n\ncheck_q2_3(group_means)",
             solution=(
                 "group_means = grains.select('gluten', 'p_frac', 'q_frac', 'pq_frac').group('gluten', np.mean)\n"
-                "group_means\n\ncheck_q2_3(group_means)"
+                "group_means.show()\n\ncheck_q2_3(group_means)"
             ),
         ))
     else:
@@ -945,10 +982,10 @@ def part2(track: str, version: str) -> list[dict]:
         """))
         cells.append(solvable(
             version,
-            scaffold="group_means = ...\ngroup_means\n\ncheck_q2_3(group_means)",
+            scaffold="group_means = ...\ndisplay(group_means)\n\ncheck_q2_3(group_means)",
             solution=(
                 "group_means = grains.groupby('gluten')[['p_frac', 'q_frac', 'pq_frac']].mean()\n"
-                "group_means\n\ncheck_q2_3(group_means)"
+                "display(group_means)\n\ncheck_q2_3(group_means)"
             ),
         ))
 
@@ -963,19 +1000,19 @@ def part2(track: str, version: str) -> list[dict]:
     if track == "ds":
         cells.append(solvable(
             version,
-            scaffold="by_grain = ...\nby_grain\n\ncheck_q2_4(by_grain)",
+            scaffold="by_grain = ...\nby_grain.show()\n\ncheck_q2_4(by_grain)",
             solution=(
                 "by_grain = grains.select('grain', 'pq_frac').group('grain', np.mean).sort('pq_frac mean', descending=True)\n"
-                "by_grain\n\ncheck_q2_4(by_grain)"
+                "by_grain.show()\n\ncheck_q2_4(by_grain)"
             ),
         ))
     else:
         cells.append(solvable(
             version,
-            scaffold="by_grain = ...\nby_grain\n\ncheck_q2_4(by_grain)",
+            scaffold="by_grain = ...\ndisplay(by_grain)\n\ncheck_q2_4(by_grain)",
             solution=(
                 "by_grain = grains.groupby('grain')['pq_frac'].mean().sort_values(ascending=False)\n"
-                "by_grain\n\ncheck_q2_4(by_grain)"
+                "display(by_grain)\n\ncheck_q2_4(by_grain)"
             ),
         ))
         cells.append(md(r"""

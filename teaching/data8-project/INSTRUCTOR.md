@@ -66,23 +66,24 @@ file and replace the calls with `grader.check("qN_M")`.
 
 - `grains.csv`: 251 rows, **118 gluten / 133 gluten-free** → majority-class baseline **53%**.
   Built with a fixed seed (`build_dataset.py`, `SEED = 8`); re-running reproduces it exactly.
-- Grain-level mean P+Q fraction (what students will rediscover):
+- Grain-level mean P+Q fraction (what students will rediscover). Each cell is the mean of
+  the per-protein fractions, rounded once to 2 dp — the same number `by_grain` prints in Q2.4:
 
   | grain | n | P+Q frac | "PQ" per 100 aa |
   |---|--:|--:|--:|
-  | rye | 3 | 0.54 | 11.4 |
+  | rye | 3 | 0.53 | 11.4 |
   | barley | 35 | 0.47 | 7.9 |
   | wheat | 80 | 0.47 | 5.0 |
   | **oat** | 3 | **0.30** | **1.5** |
   | **maize** | 25 | **0.27** | 0.8 |
   | **sorghum** | 20 | **0.26** | 0.8 |
   | foxtail_millet | 20 | 0.14 | 0.2 |
-  | quinoa | 20 | 0.13 | 0.3 |
-  | buckwheat | 20 | 0.13 | 0.4 |
+  | quinoa | 20 | 0.12 | 0.3 |
+  | buckwheat | 20 | 0.12 | 0.4 |
   | rice | 25 | 0.12 | 0.2 |
 
 - **The teaching tension:** maize, sorghum, and oat have P/Q-rich storage proteins too
-  (P+Q ≈ 0.27–0.30 vs ≈ 0.47 gluten, ≈ 0.13 other safe). On a random test split the classes
+  (P+Q ≈ 0.26–0.30 vs ≈ 0.47 gluten, ≈ 0.12–0.14 other safe). On a random test split the classes
   still separate cleanly, so composition looks perfect — the cost only shows on the harder
   **mystery set**. The **"PQ" motif rate** (Part 4) pulls maize/sorghum down to the safe
   cluster (≈ 0.8 vs ≈ 6.0 for gluten) because their P and Q are not in the tandem
@@ -123,8 +124,15 @@ same chemistry is what makes gluten reactive in celiac disease; the goal is to p
   `proline_fraction(seq)` and `glutamine_fraction(seq)`.
 - **Q1.3** Add three columns to the table: `p_frac`, `q_frac`, `pq_frac`
   (= `p_frac + q_frac`), via `apply`.
-- **Q1.4** *(written)* Why use a *fraction* rather than a raw count? *Answer: sequences
-  vary in length (50–600 here); raw counts would mostly measure protein size, not composition.*
+- **Q1.4** Set the raw `P` count and the proline fraction for the longest and the shortest
+  protein in the dataset, then *(written)* say which of the two **measures** fairly answers
+  "more proline-rich." The given cell prints both proteins labeled, because the two measures
+  genuinely disagree and students need to see it: longest = 565 residues, 21 P, fraction
+  0.037; shortest = 62 residues, 10 P, fraction 0.161. The raw count picks the longest, the
+  fraction picks the shortest. *Answer: the fraction, because it divides out length — a raw
+  count is large for any long protein, so it mostly measures size, not composition.*
+  The question deliberately asks which *measure* wins, not which protein; an earlier wording
+  ("which number answers that question") read as a choice between the two proteins.
 
 Common mistakes: using Python's `str.count` is fine here (non-overlapping is OK for single
 characters); forgetting to divide by length; adding columns without reassigning the table in
@@ -139,7 +147,19 @@ exercise, not a parallel Part 1).
 ## Part 2 — Exploration
 
 - **Q2.1** Overlaid histogram of `pq_frac`, one curve per `gluten` value. Reasonable bins.
-- **Q2.2** Scatter `p_frac` (x) vs `q_frac` (y), colored by `gluten`.
+  A given cell above it prints the column's range (`0.051` to `0.706`) so students can size
+  their bins from the data rather than recall. The question then **hands them `step = 0.02`**
+  (≈ 35 bins) and says outright that no single bin width is correct, with an invitation to
+  retry at `0.05` and `0.005` afterward. Earlier drafts asked students to pick a step against
+  a "10–50 bins" target, which is under-determined — a reviewer reasonably read it as an
+  equation with two unknowns and assumed they had forgotten how bins work. Bin width is a
+  display choice; don't let it become the hard part of a question that is really about reading
+  an overlaid histogram.
+- **Q2.2** Scatter `p_frac` (x) vs `q_frac` (y), colored by `gluten`, then *(written)* where
+  the groups overlap and whether `no` dots sit among the `yes` dots. *Answer: the clusters do
+  not separate cleanly — the `yes` group runs higher on both axes, but a band of `no` dots
+  reaches into its lower-left edge. 42 of the 133 `no` proteins fall inside the `yes`
+  bounding box: 24 maize, 15 sorghum, 2 oat, 1 rice.* This sets up Q2.5, which names them.
 - **Q2.3** Table of mean `p_frac`, `q_frac`, `pq_frac` grouped by `gluten`.
   *Answer: gluten yes ≈ 0.47; no ≈ 0.18.*
 - **Q2.4** Table of mean `pq_frac` per `grain`, sorted largest first (`by_grain`).
@@ -153,6 +173,13 @@ exercise, not a parallel Part 1).
 Notes: plots must be drawn in the same cell as their `check_q2_*` call (the checks inspect the
 current figure, and Jupyter closes it when the cell ends). Q2.1's bins must reach past the
 largest `pq_frac` (≈ 0.71); the check flags edges that cut off the top proteins.
+
+**Showing a table mid-cell.** Every answer cell ends with its `check_` call, so a bare
+variable name on an earlier line renders nothing — Jupyter only auto-displays the *last*
+expression. Tables therefore need `by_grain.show()` in the `datascience` track and
+`display(by_grain)` in `pandas` (`display` is imported in the pandas setup cell). This bit
+Q1.3, Q2.3 and Q2.4, which all looked correct but printed nothing. Parts 3–5 must follow the
+same convention.
 
 ## Part 3 — Is the difference real?
 
