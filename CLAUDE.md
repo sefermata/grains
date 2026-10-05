@@ -25,8 +25,9 @@ data/reference/    curated, version-controlled inputs
   pdb_structures.md   candidate HLA-DQ2.5 crystal structures (e.g. 4OZF) to validate against
 data/raw/          downloaded proteomes (git-ignored; regenerate with proteomes.py)
 data/processed/    proteome_index.csv, proteome_summary.csv
-src/grains/        config.py, proteomes.py
-tests/             pytest smoke tests for the reference data
+src/grains/        config.py, proteomes.py, fetch_hla.py, render_structure.py,
+                   superpose.py (RMSD), modeling.py (AlphaFold/PANDORA routes)
+tests/             pytest smoke tests for the reference data + structure handling
 docs/checkpoints.md   the 5-checkpoint plan, dated 2026-09-08 → 2026-11-28
 ```
 
@@ -34,15 +35,34 @@ docs/checkpoints.md   the 5-checkpoint plan, dated 2026-09-08 → 2026-11-28
 ```bash
 pip install -r requirements.txt          # adds biopython to the Anaconda base env
 python -m grains.proteomes               # fetch seed-storage proteins from UniProt
-python -m pytest -q                      # 9 tests, currently green
+python -m pytest -q                      # 27 tests, currently green
 ```
 Python is Anaconda at `/opt/anaconda3/bin/python3` (3.13). `PYTHONPATH=src` for the module,
 or rely on `pyproject.toml`'s `pythonpath`.
 
-**State (2026-09-10):** Checkpoint 1 in progress. Reference data built; proteome fetcher run
-(1,595 proteins; coverage gap for rye/teff/pearl-millet/amaranth is real, note it, don't hide
-it). The 4 immunodominant DQ2.5 epitope cores (glia-α1a/α2/ω1/ω2) are verified exact against
-Sollid 2012; the rest still need checking. No 3D/modeling work started. **`git` is initialized**
+**State (2026-10-05):** Checkpoint 1 done, Checkpoint 2 mostly done (due 10-06). Reference
+data built; proteome fetcher run (1,595 proteins; coverage gap for rye/teff/pearl-millet/
+amaranth is real, note it, don't hide it). All 17 peptide rows verified against Sollid 2012
+(two wrong PMIDs caught and fixed); still open are the `iedb_id` and UniProt accession+range
+columns, the Sollid 2020 update, and a direct Tye-Din 2010 check for N01–N03 (verified by
+derivation only). Validation structure is **`1S9V`**, not 4OZF (all of 4OZF–4OZI are
+TCR-bound); its peptide is panel epitope E01 exactly.
+
+Checkpoint 2: `fetch_hla.py` extracts the DQ2.5 ectodomains from 1S9V's SEQRES records;
+`superpose.py` measures the **crystal-vs-crystal RMSD baseline** — E01 core 0.24 Å between
+copies in one crystal, 1.16 Å between independent depositions, so a model within ~1.2 Å has
+matched experimental reproducibility. Two things are blocked on manual steps: the AlphaFold
+Server upload (no public API; submission JSON is written and ready) and the **MODELLER
+license key**, which blocks PANDORA — the critical path, since Checkpoint 3 locks PANDORA in
+as the only route for complexes that get PRODIGY-scored. `modeling.assert_scorable()` enforces
+that in code.
+
+Two traps already paid for, both of the "silently plausible wrong number" kind — assert the
+assumption rather than trusting the file: a disordered 7-residue loop gap in 1S9V chain B that
+a naive CA walk splices across, and **4OZI's peptide chains being the reverse of their chain
+lettering** (J binds A/B, I binds C/D; pairing by letter gives a 62 Å peptide RMSD).
+
+**`git` is initialized**
 (2026-09-14, initial commit `d3e9ba8`) — this Mac has no Xcode Command Line Tools and is
 low on disk space, so git commands use GitHub Desktop's bundled binary instead:
 `/Applications/GitHub Desktop.app/Contents/Resources/app/git/bin/git`. Alias or invoke by
