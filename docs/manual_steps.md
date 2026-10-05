@@ -25,22 +25,42 @@ PANDORA is a thin layer over MODELLER, and MODELLER needs a free academic licens
 
 The key arrives by email — a short word-like string.
 
-### Step 2 — install
+### Step 2 — install, with the key already in the environment
+
+Set `KEY_MODELLER` **before** `conda install`. The package's post-install script reads it and
+writes the key straight into MODELLER's config, which avoids the trap described in step 3.
 
 ```bash
+export KEY_MODELLER='the-key-from-the-email'
 conda install -y -c salilab modeller      # 10.8 has a py313 build; ~200 MB
 pip install csb-pandora                   # 0.9 on PyPI; imports MODELLER, so install it second
 ```
 
-### Step 3 — enter the key
+Single quotes in case the key contains shell-significant characters.
 
-conda's installer may prompt for it. If it doesn't, edit the key into MODELLER's config:
+### Step 3 — only if you installed without the key set
+
+**The trap:** MODELLER reads its license from `modlib/modeller/config.py` first, and only falls
+back to the `KEY_MODELLER` environment variable if that file doesn't set one. Installing without
+the variable writes the placeholder `XXXX` into `config.py` — and because `XXXX` *is* a value,
+it wins over the environment variable. So `export KEY_MODELLER=...` **after** a bare install
+appears to do nothing, which is the confusing part.
+
+Two ways out. Find the file first:
 
 ```bash
-# find the file (don't guess the path — the version number is in it)
-find /opt/anaconda3 -name config.py -path '*modeller*'
-# then replace the XXXX placeholder on the `license` line with your key
+ls /opt/anaconda3/lib/modeller-*/modlib/modeller/config.py
 ```
+
+Then either
+
+- **edit the key in** — replace `XXXX` on the `license = 'XXXX'` line with the real key; or
+- **delete the `license` line entirely**, which lets the `KEY_MODELLER` environment variable
+  take over. Only worth it if you'd rather keep the key out of a file on disk, and it means
+  the variable has to be set in every shell that runs MODELLER (including non-interactive ones),
+  so editing the key in is usually the simpler choice.
+
+Re-installing after `export KEY_MODELLER=...` also works and is the least fiddly fix.
 
 ### Step 4 — verify
 
