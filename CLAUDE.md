@@ -35,7 +35,7 @@ docs/checkpoints.md   the 5-checkpoint plan, dated 2026-09-08 → 2026-11-28
 ```bash
 pip install -r requirements.txt          # adds biopython to the Anaconda base env
 python -m grains.proteomes               # fetch seed-storage proteins from UniProt
-python -m pytest -q                      # 27 tests, currently green
+python -m pytest -q                      # 50 tests, currently green
 ```
 Python is Anaconda at `/opt/anaconda3/bin/python3` (3.13). `PYTHONPATH=src` for the module,
 or rely on `pyproject.toml`'s `pythonpath`.
