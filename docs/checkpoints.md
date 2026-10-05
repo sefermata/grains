@@ -21,9 +21,29 @@ Time estimate assumes ~8–12 h/week; adjust as noted.
 - [~] Verify **every** row of `data/reference/peptides.csv` against Sollid 2012/2020 + IEDB
       (see `data/reference/peptides_NOTES.md`). Add `iedb_id` and UniProt accession + range.
       **2026-09-16: name/core/restriction confirmed for all 17 rows against Sollid 2012**
-      (caught and fixed two wrong PMIDs along the way). Still open: `iedb_id` column, UniProt
-      accession+range column, the Sollid 2020 update, and a direct Tye-Din 2010 table check for
-      N01–N03 (currently verified by derivation only).
+      (caught and fixed two wrong PMIDs along the way).
+
+      **2026-10-05: steps 2, 3 and 4 done; the checklist is closed bar one naming question.**
+      `iedb_id` (step 2, `grains.iedb`, 12/15 cored rows) and `uniprot_accession` +
+      `uniprot_range` (step 3, `grains.map_peptides`) are now columns in `peptides.csv`, and
+      the mapping recovered the deamidation positions too (step 4). All 17 rows are
+      gene-faithful: 13 deamidated rows each need ≥1 Q→E against the gene, 4 native rows match
+      literally — that split is itself the check.
+
+      Four data errors came out of it, all of the silent kind, and all fixed:
+      **three more wrong PMIDs** (including `22371225`, cited by every epitope row, which
+      actually points at an organic-chemistry paper → `22322673`); **E09 carrying a native
+      `extended_sequence`** under a `deamidated` label, which would have inverted the TG2
+      comparison since that field is the modeling input; and **five rows with fabricated
+      flanks** (E05, E06, E08, E11, E12) whose verified cores sit in real genes but whose
+      surrounding residues match no gene at all. Full account in `peptides_NOTES.md`.
+
+      **Still open (one item):** the E10 `DQ8-glia-γ1a` vs `g1` name-suffix question, which
+      needs the Sollid 2020 text.
+      **Closed as limitations, not tasks:** Tye-Din 2010 and Sollid 2020 are confirmed
+      paywalled (no PMC record), so N01–N03 stay derivation-verified — though the UniProt
+      mapping independently showed each sits at the *same gene locus* as its deamidated
+      partner differing only by Q→E, which is stronger evidence than the original derivation.
 - [x] Confirm the PDB target list (`data/reference/pdb_structures.md`); write
       `data/processed/targets.csv`. Download the chosen validation structure (`4OZF` or `1S9V`).
       **2026-09-21: confirmed all 8 candidate PDB IDs against rcsb.org.** Two corrections to
@@ -173,6 +193,19 @@ Checkpoint 2 validation structure, whose only downstream use is an RMSD comparis
 PRODIGY input. If PANDORA's accuracy on the validation peptide (Checkpoint 2) is too poor to
 trust for the full panel, that's a real limitation to state plainly in the report — not a reason
 to reach for AlphaFold Server here instead.
+
+**Carry-forward from Checkpoint 1 (2026-10-05), both affecting the statistics:**
+- **E03 and E06 are not independent observations.** DQ2.5-glia-ω1 (wheat ω-gliadin,
+  `PFPQPEQPF`) and DQ2.5-sec-2 (rye secalin, `PQPEQPFPQ`) overlap by **7 of 9 residues** —
+  two offset registers of the same repetitive prolamin motif, and no IEDB entry separates
+  them. They will model and score almost identically, so counting both toward a toxic-vs-safe
+  comparison overstates the sample. Treat them as one observation, or report with and without
+  E06 and say which was used. (It is also part of *why* rye is toxic — worth a line in the
+  writeup rather than only a caveat.)
+- **Peptide length is a confound.** Panel `extended_sequence` lengths run 12–18 aa, and a
+  longer peptide buries more surface whatever its chemistry. Match controls per peptide
+  rather than to a panel average, and report length as a covariate or use per-residue
+  normalized scores — never compare raw buried surface area across different lengths.
 
 - [ ] `build_controls.py` — length- and P/Q-matched control peptides from zein / kafirin /
       orzenin / avenin + a non-epitope gluten stretch → `data/processed/controls.csv`.
