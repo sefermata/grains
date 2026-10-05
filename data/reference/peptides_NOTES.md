@@ -3,6 +3,35 @@
 `peptides.csv` is a **working draft**. Before Checkpoint 1 is "done", every row's `verified`
 field must read `yes`, cross-checked against a primary source.
 
+## Citation audit, 2026-10-05 — three more wrong PMIDs fixed
+
+Every PMID in the repo was checked against PubMed `esummary` (title + journal + authors), not
+spot-checked. **Three of the eleven were wrong**, including the single most-cited one:
+
+| Was | Actually points to | Corrected to |
+|-----|--------------------|--------------|
+| `22371225` | a Ti/Cu-catalysis organic-chemistry paper, *Org Biomol Chem* 2012 | **`22322673`** — Sollid 2012 |
+| `20679571` | "Herpes zoster vaccine in nursing facility residents", *Ann Intern Med* 2010 | **`20650871`** — Tye-Din 2010 |
+| `31735986` | "Location of colorectal adenomas and serrated polyps…", *Int J Colorectal Dis* 2019 | **`31735991`** — Sollid 2020 |
+
+`22371225` was in `source_pmid` for **all 12 epitope rows** and `20679571` for 7 more.
+
+**The verification work itself stands.** The 2026-09-16 pass was done against **PMC3349865**,
+and PMC3349865 *is* Sollid et al. 2012, "Nomenclature and listing of celiac disease relevant
+gluten T-cell epitopes restricted by HLA-DQ molecules", *Immunogenetics* — confirmed by
+`esummary`, which also gives its real PMID as 22322673. So the cores were checked against the
+right table; only the number recorded beside them was wrong. No epitope sequence changes.
+
+The other eight PMIDs verified correct: 12351792 (Shan 2002), 14517794 (Vader 2003), 15020763
+(Kim 2004), 15526039 (Arentz-Hansen 2004), 17629515 (Henderson 2007), 23063329 (Broughton
+2012), 24777060 (Petersen 2014) — plus 12923521 and 20951824, which were already correctly
+identified as the *wrong* ones in the 2026-09-16 pass.
+
+**Lesson: PMIDs recorded from memory are unreliable and fail silently** — a wrong 8-digit
+number still resolves to a real paper, so nothing looks broken. Five of eleven were wrong
+across the two audits. Any new citation gets `esummary`-checked before it lands; the one-liner
+is in the Sources section below.
+
 ## Status as of 2026-09-16
 
 All 17 rows now read `verified=yes` — **step 1 of the checklist below** (canonical name,
@@ -45,12 +74,12 @@ derivation.
 - `form` — `deamidated` = after TG2 (specific Q→E); `native` = as translated. DQ2.5 strongly
   prefers deamidated; `native_pair` rows exist to measure that effect.
 - `immunodominant` — flagged `yes` for the epitopes shown to dominate the T-cell response in
-  Tye-Din et al. 2010 (PMID 20679571): glia-α1a, glia-α2, glia-ω1, glia-ω2.
+  Tye-Din et al. 2010 (PMID 20650871): glia-α1a, glia-α2, glia-ω1, glia-ω2.
 
 ## Verification checklist (Checkpoint 1)
 
-1. Open Sollid LM et al., *Immunogenetics* 2012 (PMID 22371225) **and** the 2020 update
-   (PMID 31735986). Confirm each `canonical_name`, `core_9mer`, and `restriction`.
+1. Open Sollid LM et al., *Immunogenetics* 2012 (PMID 22322673) **and** the 2020 update
+   (PMID 31735991). Confirm each `canonical_name`, `core_9mer`, and `restriction`.
 2. For each epitope, pull the IEDB entry (search iedb.org by name or sequence) and record the
    IEDB epitope ID in a new `iedb_id` column.
 3. Confirm the `extended_sequence` is a real substring of a UniProt entry for that protein +
@@ -73,12 +102,24 @@ epitope. They will be:
 
 ## Sources
 
-- PMID 22371225 — Sollid et al., gluten epitope nomenclature, *Immunogenetics* 2012 (PMC3349865,
-  open access — used directly for the 2026-09-16 verification pass)
-- PMID 31735986 — Sollid et al., nomenclature update, *Immunogenetics* 2020 (not yet consulted
-  directly — the 2026-09-16 pass used the 2012 paper only)
-- PMID 20679571 — Tye-Din et al., comprehensive T-cell epitope hierarchy, *Sci Transl Med* 2010
-  (no open-access full text found; N01–N03 verified by derivation instead, see "Status" above)
+**Check any new PMID before recording it** (a wrong one resolves to a real paper and so fails
+silently — see the citation audit above):
+
+```bash
+curl -sS "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=PMID&retmode=json" \
+  | python3 -c "import sys,json;d=json.load(sys.stdin)['result'];k=d['uids'][0];print(d[k]['title']);print(d[k]['fulljournalname'],d[k]['pubdate'])"
+```
+
+- PMID 22322673 — Sollid et al., gluten epitope nomenclature, *Immunogenetics* 2012 (PMC3349865,
+  open access — used directly for the 2026-09-16 verification pass). **Corrected 2026-10-05**
+  — was miscited as PMID 22371225 (an organic-chemistry paper) in all 12 epitope rows.
+- PMID 31735991 — Sollid et al., nomenclature update, *Immunogenetics* 2020 (not yet consulted
+  directly — the 2026-09-16 pass used the 2012 paper only). **Paywalled**: no PMC record.
+  **Corrected 2026-10-05** — was miscited as PMID 31735986 (a colorectal-adenoma paper).
+- PMID 20650871 — Tye-Din et al., "Comprehensive, quantitative mapping of T cell epitopes in
+  gluten in celiac disease", *Sci Transl Med* 2010. **Paywalled**: confirmed no PMC record, so
+  N01–N03 stay verified by derivation only — a real, stated limitation, not an oversight.
+  **Corrected 2026-10-05** — was miscited as PMID 20679571 (a herpes-zoster-vaccine paper).
 - PMID 12351792 — Shan et al., structural basis for gluten intolerance (the 33-mer), *Science*
   2002. **Corrected 2026-09-16** — was previously miscited as PMID 12923521, which belongs to
   an unrelated orthodontics-ethics article.

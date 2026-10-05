@@ -69,8 +69,12 @@ python -m grains.proteomes
 ## Data sources
 
 - **Gluten T-cell epitopes:** Sollid LM *et al.*, "Nomenclature and listing of celiac disease
-  relevant gluten epitopes recognized by CD4+ T cells", *Immunogenetics* 2012 (PMID 22371225)
-  and the 2020 update (PMID 31735986). Cross-checked against the IEDB (iedb.org).
+  relevant gluten T-cell epitopes restricted by HLA-DQ molecules", *Immunogenetics* 2012
+  (PMID 22322673, PMC3349865 — open access, and the table the panel was verified against),
+  plus "Update 2020: nomenclature and listing of celiac disease-relevant gluten epitopes
+  recognized by CD4+ T cells", *Immunogenetics* 2020 (PMID 31735991 — paywalled, not yet
+  consulted). Titles and PMIDs audited 2026-10-05; see `data/reference/peptides_NOTES.md`.
+  Cross-checked against the IEDB (iedb.org).
 - **Proteomes:** UniProtKB REST API (rest.uniprot.org).
 - **Structures:** RCSB PDB (rcsb.org) — see `data/reference/pdb_structures.md`.
 - **Sequence-based binding baseline:** IEDB MHC class II binding prediction API.
