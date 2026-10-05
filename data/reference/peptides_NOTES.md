@@ -3,6 +3,76 @@
 `peptides.csv` is a **working draft**. Before Checkpoint 1 is "done", every row's `verified`
 field must read `yes`, cross-checked against a primary source.
 
+## UniProt mapping, 2026-10-05 — checklist steps 3 and 4 done
+
+`grains.map_peptides` locates every peptide in the downloaded proteomes and writes
+`data/processed/peptide_uniprot_map.csv`. `uniprot_accession` and `uniprot_range` columns are
+now in `peptides.csv`. **17/17 rows are gene-faithful**: 13 deamidated rows each need at least
+one Q→E against the gene, 4 native rows match literally. That consistency is itself the check.
+
+**Step 3 as written doesn't survive the data.** A deamidated peptide is *not* a substring of
+any native gene — that is what deamidation means. Searching literally reports every deamidated
+epitope as absent. So the search lets a peptide `E` match a gene `Q` (never the reverse: TG2
+goes Q→E), one degree of freedom per glutamate with every other residue literal, and records
+which positions flexed. That does step 3 and step 4 at once: a position that had to flex from
+Q *is* a deamidation site.
+
+**What it confirmed.** E01/N01 land on the identical window of P04724 (77–93) differing by
+exactly one Q→E; likewise E02/N02 and E04/N03; and C01 flexes at exactly 3 positions against a
+literal C02. The native/deamidated pairs are controlled pairs at one locus — established from
+sequence, independently of the literature.
+
+**Two errors it caught**, both of the silent kind:
+
+1. **E09 carried a native `extended_sequence`** (`QGSFQPSQQNPQ`) while labeled
+   `form=deamidated`, and it didn't even contain its own deamidated core `EGSFQPSQE`. It was
+   the only deamidated row matching a gene literally — zero Q→E — which is what gave it away.
+   Since `extended_sequence` is the modeling input, E09 would have been modeled native under a
+   deamidated label, inverting the TG2 comparison it exists to support. Corrected to
+   `EGSFQPSQENPQ`, the C-terminal 12 residues of 2NNA's deposited peptide.
+2. **Five rows had fabricated flanks** (E05, E06, E08, E11, E12). Each verified core sits in a
+   real gene, but the surrounding residues of `extended_sequence` matched no gene at all —
+   residues appear to have been dropped at a junction (E05's gene reads `FPQQ|PIPQQPQPY`, but
+   the row spliced `F` straight onto `PIPEQ`). E12 is the clearest: it ended `PFVQ`, but `V`
+   belongs to E11's paralog; the gene holding E12's core has `PFLQQ`. All five replaced with
+   real gene windows.
+
+**First diagnosis of those five was wrong, and worth recording as a lesson.** The initial run
+blamed the rye/teff/oat proteome coverage gap. That was the convenient explanation and it was
+false: the cores *are* present locally, including in rye (`A4GU92_SECCE`) and oat
+(`AVEE_AVESA`, `F4MJY2_AVESA`). The mapper now checks for the core before blaming coverage and
+reports `match_type=core_only` with the real location, so the diagnosis points at the panel
+rather than at the data.
+
+### Two curation decisions, and why
+
+**Which paralog, when a core occurs in many?** Prefer **reviewed (Swiss-Prot)** entries over
+unreviewed (TrEMBL), then lowest accession to break ties. Storage-protein families are large
+and repetitive — E08's core appears in **101** wheat entries with differing flanks — so this
+needs a rule, not a preference. Swiss-Prot entries are manually curated with stable names and
+sequences, which makes them defensible to cite; the accession tiebreak keeps the choice
+deterministic so output doesn't shuffle between runs. This moved E08 to `P06659 GDBB_WHEAT`
+("Gamma-gliadin B", Swiss-Prot). Two rows have **no reviewed entry available**: E06 (rye) and
+E12 (oat) rest on TrEMBL — a real limitation of public annotation for those grains, stated
+rather than hidden.
+
+**How long should `extended_sequence` be?** Each repaired row **keeps its existing length**
+(13–14 aa); only the flanks changed. Rejected the tidier option of standardizing the panel to
+one length, for two reasons. The rows that were already gene-faithful (E01–E04, E07, E09, E10)
+carry their extended sequences as published, and rewriting those to hit a round number would
+trade citable sequences for a neater table. And peptide length drives the Checkpoint 3
+interface scores directly — a longer peptide buries more surface whatever its chemistry — so
+what matters is that the panel's length profile is *known* and that controls are matched to it
+peptide-by-peptide, which `build_controls.py` already plans to do. Repairing these five at
+their current lengths keeps that profile intact instead of stacking a second change on top of
+the flank fix.
+
+**Carry forward to Checkpoint 4:** panel `extended_sequence` lengths run 12–18 aa (plus the two
+33-mers, which are a separate `toxic_context` category). Length is therefore a confound for any
+raw interface score. Handle it by per-peptide length-matched controls, and report length as a
+covariate or use per-residue normalized scores — don't compare raw buried surface area across
+peptides of different lengths.
+
 ## Citation audit, 2026-10-05 — three more wrong PMIDs fixed
 
 Every PMID in the repo was checked against PubMed `esummary` (title + journal + authors), not
@@ -60,10 +130,13 @@ What changed in this pass:
   `15526039` (Arentz-Hansen et al. 2004, PLoS Medicine — the paper Sollid 2012 itself cites for
   these two epitopes, alongside Vader et al. 2003 Gastroenterology, PMID `14517794`).
 
-Still open for Checkpoint 1: add `iedb_id` column (checklist step 2), add UniProt accession +
-residue range column (checklist step 3), resolve the E10 name-suffix question, and ideally
-find an accessible copy of Tye-Din 2010 to table-check N01–N03 directly rather than by
-derivation.
+Still open for Checkpoint 1 (updated 2026-10-05): add `iedb_id` column (checklist step 2) and
+resolve the E10 name-suffix question. Checklist step 3 (UniProt accession + residue range) and
+step 4 (deamidation positions) are **done** — see the UniProt mapping section above.
+Tye-Din 2010 and Sollid 2020 are confirmed paywalled (no PMC record), so N01–N03 stay
+derivation-verified; that is now a stated limitation rather than an open task. Note the
+mapping independently confirmed N01–N03 sit at the same gene loci as their deamidated
+partners, differing only by Q→E, which is stronger evidence than the original derivation.
 
 ## What each column means
 

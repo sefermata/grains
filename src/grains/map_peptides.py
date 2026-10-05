@@ -74,6 +74,20 @@ class Protein:
     description: str
     sequence: str
     grain: str
+    reviewed: bool = False
+
+
+def sort_key(protein: Protein) -> tuple:
+    """Ordering used to pick one gene when a core occurs in many paralogs.
+
+    Storage-protein families are large and repetitive -- the gamma-gliadin core E08 appears
+    in 101 wheat entries with differing flanks -- so "which gene" needs a rule, not a
+    preference. Reviewed (Swiss-Prot) entries are manually curated and have stable names and
+    sequences; unreviewed (TrEMBL) ones are automatic annotations. Preferring reviewed gives a
+    defensible, citable anchor. Accession breaks remaining ties so the choice is deterministic
+    and the output doesn't shuffle between runs.
+    """
+    return (not protein.reviewed, protein.accession)
 
 
 def load_proteins(grain_files: dict[str, list[str]] | None = None) -> dict[str, list[Protein]]:
@@ -92,10 +106,13 @@ def load_proteins(grain_files: dict[str, list[str]] | None = None) -> dict[str, 
                 entry_name = rest or ""
                 description = record.description.split(" OS=")[0]
                 description = description.partition(" ")[2] or description
+                reviewed = "reviewed=yes" in record.description
                 entries.append(
-                    Protein(accession, entry_name, description, str(record.seq), grain)
+                    Protein(accession, entry_name, description, str(record.seq),
+                            grain, reviewed)
                 )
-        proteins[grain] = entries
+        # Swiss-Prot first, so the first hit found is the best-curated one (see sort_key).
+        proteins[grain] = sorted(entries, key=sort_key)
     return proteins
 
 
@@ -142,6 +159,71 @@ def locate(peptide: str, declared_grain: str,
             if found is not None:
                 hits.append((protein, found[0], found[1]))
     return hits
+
+
+def propose_extended(core: str, grain: str, length: int,
+                     proteins: dict[str, list[Protein]]) -> dict | None:
+    """Build a gene-faithful `extended_sequence`: real flanks around a verified core.
+
+    Used to repair rows whose core sits in a real gene but whose flanking residues match no
+    gene at all (`match_type == "core_only"`).
+
+    `length` is deliberately the row's *existing* length rather than one uniform number.
+    Two reasons. The rows that are already gene-faithful (E01-E04, E07, E09, E10) carry the
+    extended sequences as published, and rewriting those to hit a round number would trade a
+    citable sequence for a tidier table. And peptide length drives the Checkpoint 3 interface
+    scores directly -- a longer peptide buries more surface whatever its chemistry -- so what
+    matters is that the panel's length profile is known and that controls are matched to it
+    peptide-by-peptide, not that every peptide is the same length. Repairing these 5 at their
+    current lengths keeps the existing profile intact instead of introducing a second change
+    alongside the flank fix.
+
+    The core is centered as evenly as the length allows; near a sequence terminus the window
+    slides inward so it stays inside the protein rather than being padded with invented
+    residues.
+    """
+    pattern = deamidation_tolerant_pattern(core)
+    for protein in proteins.get(grain, []):      # already Swiss-Prot-first
+        match = pattern.search(protein.sequence)
+        if match is None:
+            continue
+        core_start, core_end = match.start(), match.end()
+        spare = length - len(core)
+        if spare < 0:
+            return None
+        left = spare // 2
+        start = core_start - left
+        end = start + length
+        # Slide inward rather than pad: every residue must come from the real sequence.
+        if start < 0:
+            start, end = 0, min(length, len(protein.sequence))
+        if end > len(protein.sequence):
+            end = len(protein.sequence)
+            start = max(0, end - length)
+
+        native = protein.sequence[start:end]
+        residues = list(native)
+        sites = []
+        for offset, residue in enumerate(core):
+            index = (core_start - start) + offset
+            if residue == "E" and residues[index] == "Q":
+                residues[index] = "E"
+                sites.append(index + 1)
+        deamidated = "".join(residues)
+        if core not in deamidated:
+            return None
+        return {
+            "accession": protein.accession,
+            "entry_name": protein.entry_name,
+            "description": protein.description,
+            "reviewed": protein.reviewed,
+            "start": start + 1,
+            "end": end,
+            "native": native,
+            "deamidated": deamidated,
+            "deamidation_sites": sites,
+        }
+    return None
 
 
 def run() -> list[dict]:

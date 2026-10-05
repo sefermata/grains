@@ -96,3 +96,66 @@ def test_every_deamidated_row_needs_at_least_one_flex():
                 f"marked form={row['form']!r} -- a deamidated peptide must differ from the "
                 "gene by at least one Q->E"
             )
+
+
+def test_sort_key_prefers_reviewed_then_accession():
+    """Swiss-Prot before TrEMBL; accession breaks ties so runs don't shuffle."""
+    trembl = Protein("A0A999", "X_WHEAT", "d", "AAA", "wheat", reviewed=False)
+    swiss_b = Protein("P99999", "B_WHEAT", "d", "AAA", "wheat", reviewed=True)
+    swiss_a = Protein("P00001", "A_WHEAT", "d", "AAA", "wheat", reviewed=True)
+    assert sorted([trembl, swiss_b, swiss_a], key=map_peptides.sort_key) == [
+        swiss_a, swiss_b, trembl
+    ]
+
+
+def test_proposed_extended_is_a_real_gene_window_containing_the_core():
+    proteins = map_peptides.load_proteins()
+    proposal = map_peptides.propose_extended("PIPEQPQPY", "barley", 14, proteins)
+    assert proposal is not None
+    assert len(proposal["deamidated"]) == 14
+    assert "PIPEQPQPY" in proposal["deamidated"]
+    # the native window must be a genuine substring of the chosen protein
+    protein = next(p for p in proteins["barley"]
+                   if p.accession == proposal["accession"])
+    assert proposal["native"] in protein.sequence
+    # and the two differ only at the recorded deamidation sites
+    differences = [
+        i + 1 for i, (n, d) in enumerate(zip(proposal["native"], proposal["deamidated"]))
+        if n != d
+    ]
+    assert differences == proposal["deamidation_sites"]
+
+
+def test_proposal_never_pads_past_a_sequence_terminus():
+    """A window near the end slides inward; invented residues are never added."""
+    proteins = {"test": [Protein("P1", "T", "d", "AAPFPQPELPY", "test", True)]}
+    proposal = map_peptides.propose_extended("PFPQPELPY", "test", 11, proteins)
+    assert proposal is not None
+    assert proposal["native"] == "AAPFPQPELPY"
+    assert len(proposal["native"]) == 11
+
+
+def test_every_panel_peptide_is_now_gene_faithful():
+    """The whole point of the flank repair: no row may remain core_only or not_found,
+    because extended_sequence is the modeling input."""
+    rows = map_peptides.run()
+    unfaithful = [r["epitope_id"] for r in rows
+                  if r["match_type"] in ("core_only", "not_found")]
+    assert not unfaithful, (
+        f"rows whose extended_sequence matches no real gene: {unfaithful}"
+    )
+
+
+def test_peptides_csv_uniprot_columns_agree_with_the_map():
+    """The reference table's recorded accession/range must match what the mapper finds."""
+    import csv
+
+    from grains import config
+
+    recorded = {
+        row["epitope_id"]: (row["uniprot_accession"], row["uniprot_range"])
+        for row in csv.DictReader(config.PEPTIDES_CSV.open(newline=""))
+    }
+    for row in map_peptides.run():
+        expected = (row["uniprot_accession"], f"{row['start']}-{row['end']}")
+        assert recorded[row["epitope_id"]] == expected, row["epitope_id"]
