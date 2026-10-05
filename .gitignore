@@ -23,6 +23,10 @@ data/processed/*
 # noise floor that makes every later model-vs-crystal RMSD interpretable. Regenerating it
 # needs the (git-ignored) PDB downloads, so keep the numbers in version control.
 !data/processed/rmsd_baseline.csv
+# peptide_uniprot_map.csv is the Checkpoint 1 verification result (checklist steps 3-4):
+# accession + residue range per peptide, plus the deamidation sites it confirms. A result,
+# like targets.csv and rmsd_baseline.csv — keep it in version control.
+!data/processed/peptide_uniprot_map.csv
 
 # Large model / structure outputs
 results/structures/
