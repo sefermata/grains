@@ -40,27 +40,43 @@ python -m pytest -q                      # 27 tests, currently green
 Python is Anaconda at `/opt/anaconda3/bin/python3` (3.13). `PYTHONPATH=src` for the module,
 or rely on `pyproject.toml`'s `pythonpath`.
 
-**State (2026-10-05):** Checkpoint 1 done, Checkpoint 2 mostly done (due 10-06). Reference
-data built; proteome fetcher run (1,595 proteins; coverage gap for rye/teff/pearl-millet/
-amaranth is real, note it, don't hide it). All 17 peptide rows verified against Sollid 2012
-(two wrong PMIDs caught and fixed); still open are the `iedb_id` and UniProt accession+range
-columns, the Sollid 2020 update, and a direct Tye-Din 2010 check for N01–N03 (verified by
-derivation only). Validation structure is **`1S9V`**, not 4OZF (all of 4OZF–4OZI are
-TCR-bound); its peptide is panel epitope E01 exactly.
+**State (2026-10-05):** **Checkpoints 1 and 2 both done.** Checkpoint 3 (model + score the
+panel) is next, due 2026-10-20.
 
-Checkpoint 2: `fetch_hla.py` extracts the DQ2.5 ectodomains from 1S9V's SEQRES records;
-`superpose.py` measures the **crystal-vs-crystal RMSD baseline** — E01 core 0.24 Å between
-copies in one crystal, 1.16 Å between independent depositions, so a model within ~1.2 Å has
-matched experimental reproducibility. Two things are blocked on manual steps: the AlphaFold
-Server upload (no public API; submission JSON is written and ready) and the **MODELLER
-license key**, which blocks PANDORA — the critical path, since Checkpoint 3 locks PANDORA in
-as the only route for complexes that get PRODIGY-scored. `modeling.assert_scorable()` enforces
-that in code.
+*Checkpoint 1.* Reference data built; proteome fetcher run (1,595 proteins; coverage gap for
+teff/pearl-millet/amaranth is real, note it, don't hide it). All 17 peptide rows are now
+verified, IEDB-identified (`iedb_id`, 12/15 cored rows) and mapped to a UniProt
+accession+range — and **gene-faithful**: 13 deamidated rows each need ≥1 Q→E against the gene,
+4 native rows match literally. Four classes of silent error were found and fixed along the
+way: five wrong PMIDs across two audits (incl. `22371225`, cited by *every* epitope row);
+**E09** carrying a native `extended_sequence` under a `deamidated` label; and **five rows with
+fabricated flanks** whose cores were fine but whose surrounding residues matched no gene.
+Only open item: the E10 `γ1a`/`g1` naming question, which needs the paywalled Sollid 2020.
 
-Two traps already paid for, both of the "silently plausible wrong number" kind — assert the
-assumption rather than trusting the file: a disordered 7-residue loop gap in 1S9V chain B that
-a naive CA walk splices across, and **4OZI's peptide chains being the reverse of their chain
-lettering** (J binds A/B, I binds C/D; pairing by letter gives a 62 Å peptide RMSD).
+*Checkpoint 2 — the pipeline reproduces a known complex.* Validation structure is **`1S9V`**,
+not 4OZF (all of 4OZF–4OZI are TCR-bound); its peptide is panel epitope E01 exactly. The
+AlphaFold Server model hits **core RMSD 0.59–0.73 Å**, better than two independent crystals of
+the same complex agree with each other (0.91–1.16 Å), against a 0.24 Å within-crystal floor.
+Checked for circularity rather than assumed: 1S9V wasn't a template, 4OZI was, and the model
+is equidistant from both rather than hugging its template. Figure in
+`results/figures/af_vs_1S9V_overlay.png`. **MODELLER + PANDORA are installed and licensed.**
+
+*Standing constraint:* Checkpoint 3 locks **PANDORA as the only route** for complexes that get
+PRODIGY-scored (AlphaFold Server ToS bars its output from binding predictors);
+`modeling.assert_scorable()` enforces it in code.
+
+**The recurring failure mode in this project is the silently plausible wrong number** — a
+result that arrives looking computed rather than erroneous. Paid for so far: a disordered
+7-residue loop gap in 1S9V chain B that a naive CA walk splices across; **4OZI's peptide chains
+being the reverse of their chain lettering** (J binds A/B — pairing by letter gives a 62 Å
+peptide RMSD); wrong PMIDs that still resolve to real papers; a readiness check that passed on
+an unvalidated MODELLER license. The habit that catches these: assert the assumption in code
+and keep the bad case as a regression test. 50 tests, green.
+
+Two carry-forwards into Checkpoint 3/4 statistics: **E03 and E06 overlap by 7 of 9 residues**
+(wheat ω-gliadin vs rye secalin — the same motif, which is itself part of why rye is toxic) so
+they are not independent observations; and panel peptide lengths run 12–18 aa, so length is a
+confound for any raw interface score.
 
 **`git` is initialized**
 (2026-09-14, initial commit `d3e9ba8`) — this Mac has no Xcode Command Line Tools and is
