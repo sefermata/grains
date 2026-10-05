@@ -38,29 +38,30 @@ pip install csb-pandora                   # 0.9 on PyPI; imports MODELLER, so in
 
 Single quotes in case the key contains shell-significant characters.
 
-### Step 3 — only if you installed without the key set
+### Step 3 — if it's already installed (it is, as of 2026-10-05)
 
-**The trap:** MODELLER reads its license from `modlib/modeller/config.py` first, and only falls
-back to the `KEY_MODELLER` environment variable if that file doesn't set one. Installing without
-the variable writes the placeholder `XXXX` into `config.py` — and because `XXXX` *is* a value,
-it wins over the environment variable. So `export KEY_MODELLER=...` **after** a bare install
-appears to do nothing, which is the confusing part.
+MODELLER 10.8 and `csb-pandora` are installed; only the key is missing. The config is a
+two-line file and line 2 is the whole job:
 
-Two ways out. Find the file first:
+```
+/opt/anaconda3/lib/modeller-10.8/modlib/modeller/config.py
 
-```bash
-ls /opt/anaconda3/lib/modeller-*/modlib/modeller/config.py
+    install_dir = r'/opt/anaconda3/lib/modeller-10.8'
+    license = r'XXXX'          <- replace XXXX
 ```
 
-Then either
+```bash
+sed -i '' "s/XXXX/your-key/" /opt/anaconda3/lib/modeller-10.8/modlib/modeller/config.py
+```
 
-- **edit the key in** — replace `XXXX` on the `license = 'XXXX'` line with the real key; or
-- **delete the `license` line entirely**, which lets the `KEY_MODELLER` environment variable
-  take over. Only worth it if you'd rather keep the key out of a file on disk, and it means
-  the variable has to be set in every shell that runs MODELLER (including non-interactive ones),
-  so editing the key in is usually the simpler choice.
+**No need to go looking for that path** — MODELLER prints it in the error you get from
+`import modeller` while the key is still `XXXX`.
 
-Re-installing after `export KEY_MODELLER=...` also works and is the least fiddly fix.
+**Don't use `KEY_MODELLER` at this point.** It only applies to a *fresh* install (step 2):
+MODELLER reads `config.py` first and falls back to the environment variable only if that file
+sets no license. Since the install already wrote the placeholder `XXXX` there, and `XXXX` is a
+value, it shadows the variable — so exporting `KEY_MODELLER` now looks like it does nothing.
+Edit line 2 instead.
 
 ### Step 4 — verify
 
