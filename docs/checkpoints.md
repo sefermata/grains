@@ -1,9 +1,32 @@
 # Checkpoint plan
 
-Application due end of November 2026. Kickoff 2026-09-08. Checkpoints every two weeks;
-each one ends with something you can show and talk about.
+Application due end of November 2026. Kickoff 2026-09-08. Each checkpoint ends with something
+you can show and talk about.
+
+New in the project? Read [`background.md`](background.md) first — the biology, the question, and
+what each pipeline stage is for.
 
 Time estimate assumes ~8–12 h/week; adjust as noted.
+
+**Timeline pulled in 2026-10-06.** Original plan ran Checkpoint 5 to 2026-11-17 with eleven
+days of buffer. Revised: **everything substantive is done by 2026-11-07**, and 11-07 → 11-28 is
+finishing touches and fixes. Checkpoints 1 and 2 are unchanged (done); Checkpoint 3 keeps its
+10-20 date because it is the heaviest compute lift and already scheduled tight. The compression
+lands on Checkpoints 4 and 5:
+
+| Checkpoint | Was | Now |
+|---|---|---|
+| 3 — full panel + scoring | 2026-10-20 | **2026-10-20** (unchanged) |
+| 4 — analysis & baseline | 2026-11-03 | **2026-10-30** |
+| 5 — writeup & polish | 2026-11-17 | **2026-11-07** |
+| finishing touches / fixes | 11-17 → 11-28 (11 days) | **11-07 → 11-28 (3 weeks)** |
+
+*Why this is an improvement, not just a squeeze:* a report written once against a deadline is
+worse than a draft written early and revised for three weeks. Moving Checkpoint 5 to 11-07
+converts buffer-for-slippage into revision time, which is where a portfolio piece actually
+gets better. The cost is that **Checkpoint 3 now has no slack** — it was the one unknown-duration
+stage (PANDORA on ~40–50 complexes, disk-constrained), so it gets an explicit go/no-go gate
+below rather than being allowed to drift.
 
 ---
 
@@ -207,6 +230,23 @@ to reach for AlphaFold Server here instead.
   rather than to a panel average, and report length as a covariate or use per-residue
   normalized scores — never compare raw buried surface area across different lengths.
 
+**Go/no-go gate — decide by 2026-10-13.** This stage has no slack under the pulled-in timeline,
+and its duration is the one genuine unknown in the project (PANDORA's first run builds a local
+MHC template database, on a disk-constrained machine). So the first task is a single peptide,
+not the panel, and the decision is explicit rather than discovered late:
+
+- Run PANDORA on **E01** alone and RMSD it against 1S9V, using the Checkpoint 2 apparatus and
+  its measured scale. Record wall-clock time and disk used.
+- **Accurate enough** (core RMSD within the ~1.16 Å cross-deposition ceiling) **and** ~50
+  complexes fit the time and disk budget → proceed to the full panel.
+- **Accurate but slow or disk-hungry** → scope down to a defensible subset: all 17 panel rows
+  plus one matched control each (~34), dropping the second control tier. Say so in the report.
+- **Not accurate enough** → that is a real limitation to state plainly, not a reason to reach
+  for AlphaFold Server (see the constraint above). Fall back to interface-geometry scores that
+  do not depend on sub-ångström accuracy, and lead the report with the sequence baseline as the
+  primary comparison with structure as support.
+
+- [ ] PANDORA on E01; RMSD vs 1S9V; time + disk measured; gate decision recorded here.
 - [ ] `build_controls.py` — length- and P/Q-matched control peptides from zein / kafirin /
       orzenin / avenin + a non-epitope gluten stretch → `data/processed/controls.csv`.
 - [ ] Model toxic panel + controls + native pairs (~40–50 complexes) **with PANDORA**.
@@ -218,7 +258,7 @@ to reach for AlphaFold Server here instead.
 
 ---
 
-## Checkpoint 4 — Analysis & baseline  (due 2026-11-03)
+## Checkpoint 4 — Analysis & baseline  (due 2026-10-30)
 
 **Goal:** turn scores into a defensible answer.
 
@@ -229,18 +269,51 @@ to reach for AlphaFold Server here instead.
       (paired). ROC / AUC using celiac status as the label.
 - [ ] Compare structure scores vs the sequence baseline — where does structure add signal?
 
+**Build a real null** (carried in from the ESM-2 comparison, 2026-10-06 — see
+`background.md` §4). Two requirements, both cheap and both easy to skip by accident:
+
+- **Permute the labels.** Shuffle toxic/safe a few thousand times, recompute the statistic, and
+  report where the real value sits in that distribution. This is the honest version of "is the
+  difference real" and it costs nothing once `scores.csv` exists.
+- **Match decoys on length and P/Q composition, not just length.** Prolamins are
+  compositionally extreme — mostly proline and glutamine — so generic decoy peptides are too
+  easy to beat and would flatter the result. `build_controls.py` already matches on P/Q; the
+  null has to as well.
+- **Do not invent a p-value from a score.** `p = 1 - score` is not a p-value, is not uniform
+  under the null, and any multiple-testing correction fed on it returns a confident-looking
+  number with no guarantee behind it. Published instance of exactly this mistake noted in
+  `background.md` §4.
+- **Resample at the family level.** `E03`/`E06` are one observation (7 of 9 residues shared), so
+  bootstrap over epitope families, not individual peptides, or the confidence intervals come out
+  falsely narrow.
+
 **Present:** 2–3 figures with statistics + a paragraph interpreting them.
 
 ---
 
-## Checkpoint 5 — Writeup & polish  (due 2026-11-17)
+## Checkpoint 5 — Complete draft  (due 2026-11-07)
 
-**Goal:** a portfolio-ready artifact.
+**Goal:** the whole thing exists end to end. Rough in places is fine — complete is the bar, not
+polished. Everything after this date improves a draft that already exists.
 
 - [ ] `notebooks/analysis.ipynb` runs top to bottom from `data/processed/`.
 - [ ] `report.md` (2–3 pp): question, methods, results, limitations, "what I'd do next".
+      Introduction adapts `background.md` §1–2; the methods section's licensing paragraph
+      adapts §3 and the Checkpoint 3 constraint.
 - [ ] README updated with results summary + a headline figure.
 - [ ] Repo tidy: docstrings, `pytest` green, `requirements.txt` complete, LICENSE.
+
+**Present:** the repo + report as the portfolio piece.
+
+---
+
+## Finishing touches & fixes  (2026-11-07 → 11-28)
+
+Three weeks against an existing draft. Nothing here is load-bearing — if a given item does not
+happen, the portfolio piece is still complete and defensible. Ordered by value.
+
+- [ ] Read the report cold after a few days away and fix what does not survive that. This is
+      the single highest-value item in the window and the reason the draft moved to 11-07.
 - [ ] Replace `results/figures/1S9V_dq25_groove.png` (Checkpoint 1's quick Biopython
       CA-backbone-trace render) with a real ChimeraX or PyMOL cartoon: helices as ribbons,
       beta-sheet as arrows, peptide as sticks colored by atom, viewed straight down into the
@@ -248,11 +321,14 @@ to reach for AlphaFold Server here instead.
       can't show anchor-pocket chemistry (the deamidated Glu side chains dropping into the
       DQ2.5 pockets), which is the actual story worth a headline figure. Needs disk space
       freed up first (no Xcode CLT / low disk currently blocks a ChimeraX/PyMOL install).
+- [ ] Application text itself — the research-interest paragraphs that reference this work.
+- [ ] Open Checkpoint 1 item: the `E10` `DQ8-glia-γ1a` vs `g1` name-suffix question, if the
+      Sollid 2020 text becomes reachable (paywalled as of 2026-10-05).
 - [ ] Optional stretch: a second HLA allele (DQ8), or ancient-wheat (einkorn/emmer) prolamins.
-
-**Present:** the repo + report as the portfolio piece.
-
-**2026-11-17 → 11-28:** buffer for slippage / stretch goals / application text.
+- [ ] Optional stretch: run the oat avenin-E candidates from the ESM-2 study
+      (`background.md` §4) through PANDORA + PRODIGY and place them against the panel's
+      toxic/safe score distributions — an independent structural read on candidates a sequence
+      classifier cannot adjudicate. Needs the cultivar sequences; that repo is private.
 
 ---
 
@@ -264,3 +340,6 @@ to reach for AlphaFold Server here instead.
 | Sparse UniProt coverage for teff / millets | Drop to a smaller grain set; note the data gap explicitly in the report |
 | Peptide sequence errors propagate | Checkpoint 1 verification gate; `verified == yes` required before modeling |
 | Scope creep | TCR step, MD refinement, and extra alleles are explicitly out of scope for v1 |
+| **Checkpoint 3 has no slack** (pulled-in timeline) | Explicit go/no-go gate at 2026-10-13 on a single peptide, with a pre-agreed scoped-down panel (~34 complexes) and a pre-agreed fallback if accuracy is poor. The decision is made on measured time and disk, not discovered at 10-20 |
+| **PANDORA template database fills the disk** | Measure disk used during the E01 gate run before committing to the panel; machine was at 94% / 13 GB free on 2026-10-05 |
+| Compressed Checkpoint 4/5 squeezes the writeup | The 11-07 → 11-28 window is revision against a complete draft, so the squeeze costs polish, not completeness |

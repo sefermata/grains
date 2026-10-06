@@ -28,8 +28,15 @@ data/processed/    proteome_index.csv, proteome_summary.csv
 src/grains/        config.py, proteomes.py, fetch_hla.py, render_structure.py,
                    superpose.py (RMSD), modeling.py (AlphaFold/PANDORA routes)
 tests/             pytest smoke tests for the reference data + structure handling
+docs/background.md    the biology, the question, what each pipeline stage is for — written to
+                      be read cold; becomes the report's introduction
 docs/checkpoints.md   the 5-checkpoint plan, dated 2026-09-08 → 2026-11-28
 ```
+
+**Explaining this project to the user:** they are learning the immunology alongside the code and
+have asked twice for a simpler, deeper explanation — pitch at the level of `docs/background.md`,
+which was written for exactly that and is the shared reference. Define terms on first use, build
+from the biology up rather than from the tooling down, and don't assume MHC/peptide vocabulary.
 
 **Run**
 ```bash
@@ -40,8 +47,17 @@ python -m pytest -q                      # 50 tests, currently green
 Python is Anaconda at `/opt/anaconda3/bin/python3` (3.13). `PYTHONPATH=src` for the module,
 or rely on `pyproject.toml`'s `pythonpath`.
 
-**State (2026-10-05):** **Checkpoints 1 and 2 both done.** Checkpoint 3 (model + score the
+**State (2026-10-06):** **Checkpoints 1 and 2 both done.** Checkpoint 3 (model + score the
 panel) is next, due 2026-10-20.
+
+**Timeline pulled in 2026-10-06 at the user's request:** everything substantive done by
+**2026-11-07**, then 11-07 → 11-28 is finishing touches and fixes. CP3 keeps 10-20; CP4 moved
+11-03 → **10-30**; CP5 moved 11-17 → **11-07** and rescoped to *complete draft* rather than
+polished. The squeeze lands on CP4/CP5 and buys three weeks of revision against an existing
+draft instead of eleven days of slippage buffer. Consequence to respect: **CP3 now has no
+slack**, so it carries an explicit go/no-go gate at **2026-10-13** — PANDORA on E01 alone,
+measuring accuracy *and* wall-clock *and* disk, with a pre-agreed scoped-down panel (~34
+complexes) and a pre-agreed fallback if accuracy is poor. Don't let CP3 drift past that gate.
 
 *Checkpoint 1.* Reference data built; proteome fetcher run (1,595 proteins; coverage gap for
 teff/pearl-millet/amaranth is real, note it, don't hide it). All 17 peptide rows are now
