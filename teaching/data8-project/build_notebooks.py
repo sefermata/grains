@@ -82,7 +82,6 @@ The project has five parts. Each one ends with something concrete you can check.
 | **4. A sharper feature** | Count a *repeating pattern* instead of raw amounts, and watch the borderline grains separate | More string logic |
 | **5. Prediction** | Build a k-nearest-neighbors classifier, test it honestly on held-out data, and see where it fails | Classification |
 
-This preview contains **Parts 0 through 2**.
 """
 
 WHY = r"""
@@ -277,18 +276,24 @@ def check_q3_3(simulated_diffs, observed_diff):
     ])
 
 
-def check_q3_4(p_value, n_at_least, simulated_diffs, observed_diff):
-    arr = np.array(list(simulated_diffs), dtype=float)
-    expected_n = int(np.count_nonzero(arr >= observed_diff))
-    expected_p = expected_n / arr.size
+def check_q3_4_plot(simulated_diffs):
     ax = _current_axes()
     n_bars = len(ax.patches) if ax is not None else 0
     n_marks = len(ax.collections) + len(ax.lines) if ax is not None else 0
+    _report('Q3.4 step 1', [
+        (n_bars > 0, 'no histogram found: draw it in this same cell, above the check'),
+        (n_bars >= 10, 'only ' + str(n_bars) + ' bars drawn - did you pass the bins?'),
+        (n_marks > 0, 'mark observed_diff on the plot (a scatter point or a vertical line) so you can see where it falls'),
+    ])
+
+
+def check_q3_4_p(p_value, n_at_least, simulated_diffs, observed_diff):
+    arr = np.array(list(simulated_diffs), dtype=float)
+    expected_n = int(np.count_nonzero(arr >= observed_diff))
+    expected_p = expected_n / arr.size
     if not isinstance(p_value, (int, float, np.floating)) or not isinstance(n_at_least, (int, np.integer)):
         print('x  Q3.4: n_at_least should be a whole number and p_value a number'); return
-    _report('Q3.4', [
-        (n_bars > 0, 'no histogram found: draw it in this same cell, above the check'),
-        (n_marks > 0, 'mark observed_diff on the plot (a scatter point or a vertical line) so the reader can see where it falls'),
+    _report('Q3.4 step 2', [
         (n_at_least == expected_n, 'n_at_least should count the simulated differences >= observed_diff, which is ' + str(expected_n) + ' here'),
         (0 <= p_value <= 1, 'a p-value is a share, so it has to land between 0 and 1 - divide the count by the number of trials'),
         (abs(p_value - expected_p) < 1e-9, 'p_value should be n_at_least divided by the number of trials, which is ' + format(expected_p, '.4f') + ' here'),
@@ -538,6 +543,8 @@ def part0(track: str, version: str) -> list[dict]:
                 n_yes = ...   # number of rows where gluten == 'yes'
                 baseline_accuracy = ...   # bigger of the two counts, divided by the total number of rows
 
+                print('gluten proteins    :', n_yes)
+                print('non-gluten proteins:', n_no)
                 print('always guess the majority label ->', baseline_accuracy)
                 check_q0_3(baseline_accuracy)
             """,
@@ -546,6 +553,8 @@ def part0(track: str, version: str) -> list[dict]:
                 n_yes = grains.where('gluten', 'yes').num_rows
                 baseline_accuracy = max(n_no, n_yes) / grains.num_rows
 
+                print('gluten proteins    :', n_yes)
+                print('non-gluten proteins:', n_no)
                 print('always guess the majority label ->', baseline_accuracy)
                 check_q0_3(baseline_accuracy)
             """,
@@ -558,6 +567,8 @@ def part0(track: str, version: str) -> list[dict]:
                 n_yes = ...   # number of rows where gluten == 'yes'
                 baseline_accuracy = ...   # bigger of the two counts, divided by the total number of rows
 
+                print('gluten proteins    :', n_yes)
+                print('non-gluten proteins:', n_no)
                 print('always guess the majority label ->', baseline_accuracy)
                 check_q0_3(baseline_accuracy)
             """,
@@ -566,6 +577,8 @@ def part0(track: str, version: str) -> list[dict]:
                 n_yes = (grains['gluten'] == 'yes').sum()
                 baseline_accuracy = max(n_no, n_yes) / len(grains)
 
+                print('gluten proteins    :', n_yes)
+                print('non-gluten proteins:', n_no)
                 print('always guess the majority label ->', baseline_accuracy)
                 check_q0_3(baseline_accuracy)
             """,
@@ -855,21 +868,18 @@ def part2(track: str, version: str) -> list[dict]:
         `start` up to (but not including) `stop`, counting by `step`. For example,
         `np.arange(0, 1, 0.25)` gives `0, 0.25, 0.5, 0.75`.
 
-        Two things to settle. First, `stop` has to land **past** the largest `pq_frac`, or the
-        proteins above it get left out of the picture — so run the cell below to see the range
-        the column actually covers, rather than trying to remember it.
+        To pick the bins, first remember that `stop` has to land **past** the largest `pq_frac`, or the
+        proteins above it get left out of the picture. Run the cell below to see the range
+        the column actually covers so you know where `stop` should actually stop.
 
-        Second, `step`, which is the width of one bin. **There is no single correct width.**
+        For `step`, you're choosing the width of one bin. **There is no single correct width.**
         It's a choice about how to show the data, not a number you can solve for, so nothing
-        here will tell you the answer. Use `step = 0.02` to start: over a range of about 0.7
-        that's roughly 35 bins, fine enough to show the shape without looking like static.
-        Save the edges as `my_bins`.
+        here will tell you the answer. **Use `step = 0.02` to start.** 
 
-        Once the plot works, come back and try `0.05` and `0.005`. Too few bins and the two
-        humps smear into one; too many and every bin holds one or two proteins and the shape
-        disappears into spikes. Seeing that trade-off is the point — the check accepts anything
-        from 10 to 50 bins, and that range is wide precisely because the picture barely changes
-        across it.
+
+        Once the plot works, come back and try `0.05` and `0.005` as your `step`. Too few bins and the two
+        humps smear into one, but with too many, every bin holds only one or two proteins and the shape
+        disappears into spikes. Seeing that trade-off is the point.
     """))
     pq_col = "grains.column('pq_frac')" if track == "ds" else "grains['pq_frac']"
     cells.append(code(
@@ -950,7 +960,7 @@ def part2(track: str, version: str) -> list[dict]:
         cells.append(solvable(
             version,
             scaffold=r"""
-                ...   # scatter p_frac (x) against q_frac (y), colored by gluten
+                ...  
 
                 check_q2_2(grains)
             """,
@@ -1015,7 +1025,7 @@ def part2(track: str, version: str) -> list[dict]:
     """))
     if track == "ds":
         cells.append(md(r"""
-            **Hint:** `table.group('gluten', np.mean)` takes the mean of every other column in
+            **Hint:** `table.group('column', np.mean)` takes the mean of every column in
             `table`, so use `select` first to keep just the columns you want. The new columns
             come back renamed with `mean` added, like `p_frac mean`.
         """))
@@ -1078,12 +1088,20 @@ def part2(track: str, version: str) -> list[dict]:
     cells.append(md(r"""
         ### Question 2.5
 
-        Wheat, barley, and rye are the three grains that trigger celiac disease. Look at
-        `by_grain` and your two plots. Which grains that do **not** trigger it come closest to
-        those three? Name them, and say why that matters for a classifier that only looks at
-        P and Q content. (A **classifier** is a rule that predicts a label. Think about what a
+        Wheat, barley, and rye are three grains known to trigger celiac disease. Which
+        **non-gluten** grains come closest to those three gluten grains? Name them, and say why
+        that matters for a classifier that only looks at P and Q content.
+
+        Answer this from `by_grain`, not from the plots. Both plots color by `gluten`, so they
+        can show you *that* the two groups overlap — which is what you wrote about in Q2.2 —
+        but neither one knows a maize protein from a rice protein. Only Q2.4's table is broken
+        out far enough to name the grains in that overlap. Worth noticing in its own right: the
+        picture that shows a problem exists and the table that identifies it are often not the
+        same display.
+
+        A **classifier** is a rule that predicts a label. Think about what a
         rule like "high `pq_frac` means gluten" would say about these grains, and whether it
-        would be right.) Write one or two sentences in `answer_q2_5`.
+        would be right. Write one or two sentences in `answer_q2_5`.
     """))
     cells.append(solvable(
         version,
@@ -1099,7 +1117,7 @@ def part2(track: str, version: str) -> list[dict]:
 
     cells.append(md(r"""
         ---
-        **Part 2 done.** Gluten proteins really do look different: they have a much higher share
+        **Part 2 done.** Gluten proteins really do look different because they have a much higher share
         of `P` and `Q`. But three "safe" grains sit uncomfortably close. Part 3 asks whether the
         gap between the two groups is real or could have happened by chance.
     """))
@@ -1131,16 +1149,8 @@ def part3(track: str, version: str) -> list[dict]:
 
         Start with the number we are trying to explain. Set `observed_diff` to the mean
         `pq_frac` of the gluten proteins **minus** the mean `pq_frac` of the rest.
-
-        Order matters only for the sign: do it this way round so a positive number means
-        "gluten grains are richer in P and Q", which is easier to talk about later.
     """))
     if track == "ds":
-        cells.append(md(r"""
-            **Hint:** `grains.where('gluten', are.equal_to('yes'))` keeps only the rows whose
-            `gluten` value is `'yes'`. From there, `.column('pq_frac').mean()` gives you the
-            mean of that column.
-        """))
         cells.append(solvable(
             version,
             scaffold=r"""
@@ -1165,10 +1175,6 @@ def part3(track: str, version: str) -> list[dict]:
             """,
         ))
     else:
-        cells.append(md(r"""
-            **Hint:** `grains[grains['gluten'] == 'yes']` keeps only the rows whose `gluten`
-            value is `'yes'`. From there, `['pq_frac'].mean()` gives you the mean of that column.
-        """))
         cells.append(solvable(
             version,
             scaffold=r"""
@@ -1198,13 +1204,17 @@ def part3(track: str, version: str) -> list[dict]:
         ### Question 3.2
 
         A permutation test needs a **null hypothesis**: a specific, boring story about how the
-        data could have come out this way with nothing interesting going on. It has to be
-        specific enough to simulate — if you cannot act it out with a shuffle, it is not yet a
-        null hypothesis.
+        data could have come out this way with nothing interesting going on.
 
-        Here the boring story is that the `gluten` label tells you nothing about `pq_frac`: the
-        251 values are what they are, and which ones got the `yes` label was effectively a
-        coin toss that happened to produce groups of 118 and 133.
+        The dataset holds **118 gluten proteins and 133 non-gluten ones** — the two counts your
+        Q0.3 cell prints. The null hypothesis is not about those counts; they are just how many
+        of each we happened to collect, and they stay fixed no matter what. It is about the
+        *gap* you measured in Q3.1.
+
+        So the boring story goes: the `gluten` label tells you nothing about `pq_frac`. The 251
+        values are what they are, and which ones ended up labeled `yes` was effectively a coin
+        toss — so splitting these same numbers into a group of 118 and a group of 133 would
+        throw up a gap like yours anyway.
 
         Write that null hypothesis in your own words in `answer_q3_2`, in one or two sentences.
     """))
@@ -1224,7 +1234,7 @@ def part3(track: str, version: str) -> list[dict]:
     cells.append(md(r"""
         ### Question 3.3
 
-        Now act the null hypothesis out. One **trial** is: shuffle the `gluten` labels among the
+        Now act out the null hypothesis. One **trial** is: shuffle the `gluten` labels among the
         proteins, leaving every `pq_frac` value exactly where it is, then recompute the
         difference in means the same way you did in Q3.1. That is one difference the null
         hypothesis could have produced.
@@ -1239,10 +1249,9 @@ def part3(track: str, version: str) -> list[dict]:
     if track == "ds":
         cells.append(md(r"""
             **Hint:** `grains.sample(with_replacement=False)` returns the whole table with its
-            rows in a random order, so `.column('gluten')` off that is the label column
-            shuffled. Attach it back with `with_column` and the `pq_frac` values stay put while
-            the labels move. `make_array()` builds an empty array, and
-            `np.append(arr, value)` returns that array with one more value on the end.
+            rows in a random order. Called with no `k` it takes *all* 251 rows, and without
+            replacement each row comes back exactly once — so it is a shuffle, not a subset,
+            and the 118/133 split survives it untouched.
         """))
         cells.append(solvable(
             version,
@@ -1254,9 +1263,7 @@ def part3(track: str, version: str) -> list[dict]:
                     no_mean  = ...
                     return ...
 
-                simulated_diffs = make_array()
-                for i in np.arange(5000):
-                    simulated_diffs = np.append(simulated_diffs, one_simulated_difference())
+                simulated_diffs = ...   # 5000 trials, collected
 
                 print('collected', len(simulated_diffs), 'simulated differences')
                 check_q3_3(simulated_diffs, observed_diff)
@@ -1280,8 +1287,8 @@ def part3(track: str, version: str) -> list[dict]:
     else:
         cells.append(md(r"""
             **Hint:** `np.random.permutation(grains['gluten'].values)` gives you the labels in a
-            random order as a plain array. Comparing that array to `'yes'` gives a True/False
-            mask you can use to pick rows out of `grains['pq_frac'].values`.
+            random order as a plain array — every label exactly once, so the 118/133 split
+            survives it untouched.
 
             > Use `.values` and not the `Series` itself. `grains['gluten'].sample(frac=1)` also
             > shuffles, but it carries each label's original index along with it, so pandas
@@ -1299,10 +1306,7 @@ def part3(track: str, version: str) -> list[dict]:
                     no_mean  = ...
                     return ...
 
-                simulated_diffs = []
-                for i in np.arange(5000):
-                    simulated_diffs.append(one_simulated_difference())
-                simulated_diffs = np.array(simulated_diffs)
+                simulated_diffs = ...   # 5000 trials, collected
 
                 print('collected', len(simulated_diffs), 'simulated differences')
                 check_q3_3(simulated_diffs, observed_diff)
@@ -1330,66 +1334,101 @@ def part3(track: str, version: str) -> list[dict]:
     cells.append(md(r"""
         ### Question 3.4
 
-        Draw the 5,000 simulated differences as a histogram — that picture is the **null
-        distribution**, the range of gaps the boring story produces — and mark `observed_diff`
-        on it so you can see where the real gap lands.
+        This one comes in two steps, one cell each: draw the picture first, then do the
+        arithmetic. Run each cell before reading on.
+    """))
 
-        Then compute the **p-value** in two steps: first `n_at_least`, how many simulated
-        differences are *at least as large as* `observed_diff`, then `p_value`, that count
-        divided by how many trials you ran. That is the question "if the null hypothesis were
-        true, how often would I see a gap this big?" turned into arithmetic.
+    # Step 1 — the null distribution
+    cells.append(md(r"""
+        **Step 1 — draw the null distribution.**
 
-        Keep the count as its own variable. A p-value is a *share*, always between 0 and 1, and
-        the count is what makes the next paragraph's point readable.
+        Your 5,000 simulated differences *are* the null distribution: the whole range of gaps
+        the boring story produces. Draw them as a histogram, and mark `observed_diff` on the
+        same axes so you can see where the real gap falls against them.
 
-        Use `bins=np.arange(-0.10, 0.10, 0.005)` for the histogram. Draw the plot and run the
-        check in this same cell.
+        Use `bins=np.arange(-0.10, 0.10, 0.005)`, and keep the plot and the check in this one
+        cell — the check reads whatever figure the cell just drew.
     """))
     if track == "ds":
         cells.append(md(r"""
-            **Hint:** put the array in a one-column table to use `hist`:
-            `Table().with_column('simulated difference', simulated_diffs).hist(bins=...)`. Then
-            `plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)` drops a red dot on the
-            axis at the observed value. For the p-value, `np.count_nonzero(condition)` counts
-            how many entries of a True/False array are True.
+            **Hint:** `plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)` drops a red
+            dot on the axis at the observed value.
         """))
-        hist_line = "Table().with_column('simulated difference', simulated_diffs).hist(bins=np.arange(-0.10, 0.10, 0.005))"
+        step1_scaffold = (
+            "# GIVEN - just run this. The datascience library draws histograms from a table\n"
+            "# column, so this wraps your array in a one-column table for it. Nothing to change.\n"
+            "simulated_table = Table().with_column('simulated difference', simulated_diffs)\n\n"
+            "...   # histogram of simulated_table, using the bins above\n"
+            "...   # mark observed_diff on the plot\n"
+            "plt.xlabel('difference in mean pq_frac')\n"
+            "check_q3_4_plot(simulated_diffs)"
+        )
+        step1_solution = (
+            "# GIVEN - just run this. The datascience library draws histograms from a table\n"
+            "# column, so this wraps your array in a one-column table for it. Nothing to change.\n"
+            "simulated_table = Table().with_column('simulated difference', simulated_diffs)\n\n"
+            "simulated_table.hist(bins=np.arange(-0.10, 0.10, 0.005))\n"
+            "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
+            "plt.xlabel('difference in mean pq_frac')\n"
+            "check_q3_4_plot(simulated_diffs)"
+        )
     else:
         cells.append(md(r"""
-            **Hint:** `plt.hist(simulated_diffs, bins=...)` draws the histogram. Then
-            `plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)` drops a red dot on the
-            axis at the observed value. For the p-value, `np.count_nonzero(condition)` counts
-            how many entries of a True/False array are True.
+            **Hint:** `plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)` drops a red
+            dot on the axis at the observed value.
         """))
-        hist_line = "plt.hist(simulated_diffs, bins=np.arange(-0.10, 0.10, 0.005))"
+        step1_scaffold = (
+            "...   # histogram of simulated_diffs, using the bins above\n"
+            "...   # mark observed_diff on the plot\n"
+            "plt.xlabel('difference in mean pq_frac')\n"
+            "check_q3_4_plot(simulated_diffs)"
+        )
+        step1_solution = (
+            "plt.hist(simulated_diffs, bins=np.arange(-0.10, 0.10, 0.005))\n"
+            "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
+            "plt.xlabel('difference in mean pq_frac')\n"
+            "check_q3_4_plot(simulated_diffs)"
+        )
+    cells.append(solvable(version, scaffold=step1_scaffold, solution=step1_solution))
+
+    cells.append(md(r"""
+        Look at how far apart those two things are before going on. The red dot is not out in
+        the tail of the null distribution — it is off the end of it entirely, with every
+        simulated difference bunched near zero. Not one shuffle in 5,000 got anywhere close.
+
+        **Step 2 — put a number on it.**
+
+        The p-value is the share of simulated differences that are *at least as large as*
+        `observed_diff` — the question "if the null hypothesis were true, how often would I see
+        a gap this big?" turned into arithmetic.
+
+        Compute it in two pieces: `n_at_least`, the count, and then `p_value`, that count
+        divided by the number of trials. Keeping the count as its own variable is worth it —
+        a p-value is a *share*, always between 0 and 1, and the raw count is what makes the
+        paragraph after this one readable.
+    """))
+    cells.append(md(r"""
+        **Hint:** `np.count_nonzero(condition)` counts how many entries of a True/False array
+        are True.
+    """))
     cells.append(solvable(
         version,
         scaffold=(
-            f"{hist_line}\n"
-            "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
-            "plt.xlabel('difference in mean pq_frac')\n\n"
             "n_at_least = ...\n"
-            "p_value = ...\n"
+            "p_value = ...\n\n"
             "print('simulated differences at least as large as observed:', n_at_least, 'out of', len(simulated_diffs))\n"
             "print('p-value:', p_value)\n"
-            "check_q3_4(p_value, n_at_least, simulated_diffs, observed_diff)"
+            "check_q3_4_p(p_value, n_at_least, simulated_diffs, observed_diff)"
         ),
         solution=(
-            f"{hist_line}\n"
-            "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
-            "plt.xlabel('difference in mean pq_frac')\n\n"
             "n_at_least = np.count_nonzero(simulated_diffs >= observed_diff)\n"
-            "p_value = n_at_least / len(simulated_diffs)\n"
+            "p_value = n_at_least / len(simulated_diffs)\n\n"
             "print('simulated differences at least as large as observed:', n_at_least, 'out of', len(simulated_diffs))\n"
             "print('p-value:', p_value)\n"
-            "check_q3_4(p_value, n_at_least, simulated_diffs, observed_diff)"
+            "check_q3_4_p(p_value, n_at_least, simulated_diffs, observed_diff)"
         ),
     ))
     cells.append(md(r"""
-        Look at how far apart those two things are. The red dot is not in the tail of the null
-        distribution — it is off the end of it entirely, with every simulated difference bunched
-        near zero. Not one shuffle out of 5,000 got anywhere close.
-
         Your count came out as zero out of 5,000, so the p-value is exactly `0.0` — and that
         number is worth reading carefully, because it does not mean the probability is zero. It
         means the probability is smaller than this simulation can measure. With 5,000 trials the

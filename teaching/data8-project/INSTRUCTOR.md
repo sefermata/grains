@@ -115,7 +115,11 @@ same chemistry is what makes gluten reactive in celiac disease; the goal is to p
   *Answer: wheat 80, barley 35, rice 25, maize 25, … rye 3, oat 3.*
 - **Q0.3** *(written)* If a classifier ignored the sequence entirely and always guessed
   the more common label, what accuracy would it get? *Answer: 133/251 ≈ 53%. This is the
-  baseline every later model must beat.*
+  baseline every later model must beat.* The cell now **prints `n_yes` and `n_no`** (118 and
+  133) alongside the accuracy. Students always computed both into variables, but only the
+  accuracy was printed, so the class sizes never appeared on screen — a reviewer reaching Q3.2
+  asked where 118 and 133 had come from and did not remember seeing them. Same defect class as
+  the Q2.3/Q2.4 display bug: computed, correct, invisible.
 
 ## Part 1 — Sequence features
 
@@ -166,7 +170,13 @@ exercise, not a parallel Part 1).
   *Answer: rye, barley, wheat (≈ 0.47–0.53), then oat 0.30, maize 0.27, sorghum 0.26, then
   the rest ≈ 0.12–0.14.* Gives Q2.5 evidence to point at instead of guessing from the plots.
 - **Q2.5** *(written)* Name the non-gluten grains whose points sit closest to the gluten
-  cluster, and say why that matters for a classifier. *Answer: maize and sorghum (and oat).
+  cluster, and say why that matters for a classifier. **Answer it from `by_grain`, not the
+  plots** — and the question now says so. Both Part 2 plots color by `gluten` only, so they can
+  show *that* the groups overlap but cannot name which grains are in the overlap; an earlier
+  draft said "look at `by_grain` and your two plots", and a reviewer correctly asked how the
+  scatter was supposed to identify a grain when it plots `p_frac` against `q_frac`. The
+  question turns that into the point: the display that reveals a problem and the one that
+  identifies it are often not the same display. *Answer: maize and sorghum (and oat).
   Their storage proteins (zein, kafirin, avenin) are also prolamins — P/Q-rich — so
   composition alone will produce false positives.*
 
@@ -187,11 +197,28 @@ same convention.
 - **Q3.2** *(written)* State the null hypothesis for a permutation test here.
   *Answer: the `gluten` label is unrelated to `pq_frac`; the observed gap is what you'd get
   from a random split of these same numbers into groups of 118 and 133.*
+  **The counts are 118 gluten / 133 non-gluten** — easy to state backwards, and a draft of this
+  question did. They are *proteins*, not grains; there are only 10 grains. The question also
+  makes clear that the null is **not** about those group sizes, which are fixed facts of the
+  dataset, but about the gap: a reviewer read an earlier draft as asking for a null hypothesis
+  that explains the 118/133 split itself.
 - **Q3.3** Write a simulation: shuffle the `gluten` column, recompute the difference in
-  means, repeat ≥ 5000 times, collect the results.
-- **Q3.4** Histogram of the simulated differences (`bins=np.arange(-0.10, 0.10, 0.005)`, given)
-  with the observed value marked by a red scatter point; then the p-value **in two steps** —
-  `n_at_least` (the count) and `p_value` (that count over the number of trials). *Answer: the
+  means, repeat ≥ 5000 times, collect the results. The scaffold gives the *shape* of
+  `one_simulated_difference()` (ellipses for the body) and then only
+  `simulated_diffs = ...   # 5000 trials, collected` — students write the loop themselves.
+  Hints are trimmed to what a Data 8 student would not already have: the `datascience` hint
+  keeps only the `sample` behavior, the pandas hint only the `.values` index trap.
+- **Q3.4** Split into **two cells** after review: *step 1* draws the null distribution
+  (`bins=np.arange(-0.10, 0.10, 0.005)`, given) with the observed value marked by a red scatter
+  point, checked by `check_q3_4_plot`; *step 2* computes the p-value, checked by
+  `check_q3_4_p`. The checks had to split with it — the plot check reads the current figure, so
+  it has to sit in the cell that drew it. A reader found the single combined cell was too much
+  instruction at once; the paragraph between the two steps now asks them to *look* at the plot
+  before putting a number on it. In the `datascience` track the
+  `Table().with_column(...)` wrapper is labeled `# GIVEN - just run this`, because it read as
+  part of the problem rather than as boilerplate for `hist`. The p-value is still computed
+  **in two pieces** — `n_at_least` (the count) and `p_value` (that count over the number of
+  trials). *Answer: the
   null distribution spans about −0.086 to +0.078, sd ≈ 0.021; the observed 0.2881 is ~13.8 null
   SDs out, so `n_at_least` is 0 and `p_value` is exactly 0.0.* A follow-up cell makes the point
   that `0.0` means "below what 5,000 trials can measure", so it is reported as **p < 0.0002**.
