@@ -246,10 +246,77 @@ not the panel, and the decision is explicit rather than discovered late:
   do not depend on sub-ångström accuracy, and lead the report with the sequence baseline as the
   primary comparison with structure as support.
 
-- [ ] PANDORA on E01; RMSD vs 1S9V; time + disk measured; gate decision recorded here.
+- [x] PANDORA on E01; RMSD vs 1S9V; time + disk measured; gate decision recorded here.
+      **2026-10-06: GATE PASSED — proceed to the full panel, with one protocol change.**
+
+      Getting PANDORA to run at all took a compatibility layer: `csb-pandora` 0.9 is the only
+      PyPI release and is broken two independent ways (three Biopython APIs removed since
+      1.80; IMGT now https-only while PANDORA requests http, which kills both its structure
+      download *and* its ID query). Full account in [`pandora_setup.md`](pandora_setup.md);
+      `src/grains/pandora_compat.py` + `src/grains/pandora_db.py`, 30 tests.
+
+      **The disk risk was unfounded.** PANDORA's own downloader would have blown past the
+      free space (`gunzip` then `tar` leaves an uncompressed copy beside the extracted tree,
+      from a 1.75 GB archive). Asking IMGT which PDB IDs are class II *first* and
+      stream-extracting only those 205 members gives: **136 templates, 3.8 min, 0.24 GB**
+      (`data/processed/pandora_db_build.json`). Modeling runs ~75 s–5 min per peptide for 20
+      loop models, so ~40–50 complexes is one to four hours. **Neither time nor disk
+      constrains this checkpoint.**
+
+      **1S9V is itself one of the 136 templates**, carrying the exact peptide `LQPFPQPELPY`.
+      So the gate could not be one run — `grains.validate_pandora` withholds templates in
+      four conditions (`data/processed/pandora_gate.json`, `rmsd_pandora.csv`):
+
+      | Condition | Template | State | Shared | Core RMSD |
+      |---|---|---|---|---|
+      | `full_db` (nothing withheld) | 1S9V | binary | 11/11 | **0.16–0.23 Å** ← circular |
+      | `no_exact` (1S9V withheld) | 4OZI | ternary | 10/11 | 0.90–0.96 Å |
+      | `no_core` (all E01-core templates withheld) | 6MFF | binary | 7/11 | **0.68–0.69 Å** |
+      | `no_exact_binary` (1S9V + all ternary withheld) | 6MFG | binary | 10/11 | **0.56–0.58 Å** |
+
+      Against the Checkpoint 2 scale: 0.24 Å within-crystal floor, 1.16 Å cross-deposition
+      ceiling.
+
+      *`full_db` quantifies the circularity.* 0.16–0.23 Å is **below the within-crystal
+      floor** — closer to 1S9V than two copies in the same crystal are to each other. No
+      prediction achieves that; it threaded the target onto the deposited answer. Reported so
+      it can be dismissed, not quietly used.
+
+      *The gate metric is `no_core`: 0.69 Å, well inside the 1.16 Å ceiling.* That is the
+      condition resembling the real task — for a gluten epitope PANDORA usually has a close
+      DQ2.5 template, but for a **control peptide from a safe grain it never will**, since no
+      such complex has been crystallized. Accuracy holding up with only 7 of 11 residues
+      shared is the result that licenses the full panel.
+
+      **Unexpected finding, and it changes the protocol: template conformational state
+      matters more than sequence similarity.** `no_core` (7/11 shared) *beat* `no_exact`
+      (10/11) — 0.68 vs 0.90 Å. Cause: 4OZI is TCR-bound, and a homology model inherits its
+      template's peptide conformation, so it reproduced 4OZI faithfully *including* 4OZI's own
+      0.91–1.16 Å offset from binary 1S9V (measured independently in Checkpoint 2). The
+      `no_exact_binary` condition isolates it with similarity held constant — 6MFG, binary,
+      also 10/11 shared → **0.56–0.58 Å, a 0.35 Å improvement over the ternary template of
+      equal similarity.**
+
+      PANDORA ranks templates by peptide alignment score alone, which is blind to TCR
+      presence, and **8 of the 12 DQ2.5 templates are ternary** — so left alone it will often
+      pick one. This also contradicts the v1 scope: the project models peptide–MHC *without* a
+      TCR, so a ternary template is the wrong reference state.
+
+      **Protocol change, carried into the modeling step below:** model the panel against
+      **binary templates only** (`modeling.load_database(binary_only=True)`, leaving 1S9V,
+      6MFF, 6MFG, 6U3M). Caveat for the report: the effect is measured on **one peptide**, so
+      it is consistent with Checkpoint 2's independent crystal comparison but it is n=1 — a
+      panel peptide that models oddly is worth re-checking against the full template set.
+
+      Also: record **the chosen template and its longest shared residue run per complex.**
+      That is the covariate explaining each model's accuracy, and a toxic-vs-safe comparison
+      in which toxic peptides systematically had better templates would be measuring template
+      availability rather than binding.
 - [ ] `build_controls.py` — length- and P/Q-matched control peptides from zein / kafirin /
       orzenin / avenin + a non-epitope gluten stretch → `data/processed/controls.csv`.
-- [ ] Model toxic panel + controls + native pairs (~40–50 complexes) **with PANDORA**.
+- [ ] Model toxic panel + controls + native pairs (~40–50 complexes) **with PANDORA**,
+      **binary templates only** (gate finding above), recording the chosen template and
+      its longest shared residue run for each complex.
 - [ ] `src/grains/scoring.py` — per-complex: interface contact count, buried surface area
       (freesasa), PRODIGY ΔG / Kd, interface PAE + peptide pLDDT, anchor-pocket occupancy.
 - [ ] `data/processed/scores.csv`; first comparison plot (toxic vs safe vs intermediate).

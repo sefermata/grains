@@ -48,7 +48,7 @@ import shutil
 import time
 from pathlib import Path
 
-from . import config, modeling
+from . import config, modeling, pandora_db
 from .superpose import (
     E01_CORE,
     FIELDNAMES,
@@ -59,6 +59,11 @@ from .superpose import (
 )
 
 #: PANDORA writes MHC class II models with chain M = alpha, N = beta, P = peptide.
+# Re-exported so callers reading this module don't have to know where the IMGT
+# annotation lives.
+is_tcr_bound = pandora_db.is_tcr_bound
+tcr_bound = pandora_db.tcr_bound
+
 PANDORA_CHAINS = ("M", "N", "P")
 
 #: Final loop-refined models. `.IL*` is the initial loop model and `.B9999*` the raw homology
@@ -128,6 +133,17 @@ def conditions(database) -> dict[str, dict]:
             "rationale": (f"every template whose peptide contains the E01 core {E01_CORE} "
                           f"withheld ({len(core_bearing)}: "
                           f"{', '.join(sorted(core_bearing))})"),
+            "circular": False,
+        },
+        # The controlled comparison for the conformational-state effect. `no_exact` fell back
+        # to 4OZI, which shares 10 of 11 residues but is TCR-bound; this condition withholds
+        # 1S9V *and* every ternary template, so the best remaining candidate has comparable
+        # sequence similarity in the binary state. Similarity held roughly constant, state
+        # varied -- which is what isolates the effect rather than inferring it.
+        "no_exact_binary": {
+            "withhold": {"1S9V"} | pandora_db.tcr_bound(database),
+            "rationale": ("1S9V and every TCR-bound (ternary) template withheld; isolates "
+                          "conformational state from sequence similarity"),
             "circular": False,
         },
     }
@@ -231,12 +247,12 @@ def run(n_loop_models: int = 20) -> dict:
     GATE_PATH.write_text(json.dumps(report, indent=2) + "\n")
 
     print(f"\n{'=' * 78}\nsummary\n{'=' * 78}")
-    print(f"{'condition':<12}{'template':<10}{'shared':>7}{'core RMSD (Å)':>16}{'sec':>8}")
+    print(f"{'condition':<17}{'template':<10}{'shared':>7}{'core RMSD (Å)':>16}{'sec':>8}")
     for summary in summaries:
         span = (f"{summary['core_rmsd_min_A']:.2f}-{summary['core_rmsd_max_A']:.2f}"
                 if summary["core_rmsd_min_A"] is not None else "n/a")
         flag = "  (circular)" if summary["circular"] else ""
-        print(f"{summary['condition']:<12}{str(summary['template_chosen']):<10}"
+        print(f"{summary['condition']:<17}{str(summary['template_chosen']):<10}"
               f"{summary['shared_run_len']:>7}{span:>16}{summary['seconds']:>8.0f}{flag}")
     print(f"\nreference: floor {FLOOR_A} Å (one crystal, two copies), "
           f"ceiling {CEILING_A} Å (independent crystals)")

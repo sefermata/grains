@@ -221,6 +221,45 @@ def build(keep_archive: bool = False) -> dict:
     return report
 
 
+#: IMGT's flat files, where the TCR annotation survives. PANDORA's cleaned templates keep only
+#: chains M/N/P, so by the time a structure is a Template object you can no longer tell whether
+#: it was crystallized with a T-cell receptor bound.
+IMGT_FLAT_DIR = DATA_DIR / "PDBs" / "IMGT_retrieved" / MEMBER_DIR
+
+
+def is_tcr_bound(pdb_id: str, flat_dir: Path = IMGT_FLAT_DIR) -> bool | None:
+    """Whether this structure was crystallized with a T-cell receptor bound (ternary).
+
+    Read from IMGT's own chain annotation: `REMARK 410 IMGT chain description  TR-ALPHA`
+    and friends. Returns None when the flat file isn't on disk.
+
+    This matters because a homology model inherits its template's peptide conformation, and
+    the peptide sits differently in a TCR-bound complex than in a bare peptide-MHC one.
+    """
+    import gzip
+
+    path = flat_dir / f"IMGT-{pdb_id}.pdb.gz"
+    if not path.exists():
+        return None
+    with gzip.open(path, "rt", errors="replace") as handle:
+        for line in handle:
+            if not line.startswith("REMARK 410"):
+                if line.startswith(("ATOM", "HETATM")):
+                    break          # past the remarks; stop reading the coordinates
+                continue
+            if "IMGT chain description" in line:
+                description = line.split("IMGT chain description", 1)[1].strip()
+                if description.startswith("TR-"):
+                    return True
+    return False
+
+
+def tcr_bound(database, flat_dir: Path = IMGT_FLAT_DIR) -> set[str]:
+    """IDs of every template in `database` crystallized with a TCR bound."""
+    return {pdb_id for pdb_id in database.MHCII_data
+            if is_tcr_bound(pdb_id, flat_dir) is True}
+
+
 def database_ready() -> tuple[bool, str]:
     """Whether a built class II template database is on disk."""
     if not DATABASE_PATH.exists():

@@ -308,8 +308,12 @@ def templates_for_alleles(alleles: list[str], database) -> list[str]:
     return sorted(chosen)
 
 
-def load_database(path: Path | None = None):
-    """Load the pickled class II template database built by `grains.pandora_db`."""
+def load_database(path: Path | None = None, *, binary_only: bool = False):
+    """Load the pickled class II template database built by `grains.pandora_db`.
+
+    `binary_only=True` withholds every template crystallized with a T-cell receptor bound.
+    See `binary_templates_only` for why that is the Checkpoint 3 default.
+    """
     from . import pandora_compat  # noqa: F401  (must precede PANDORA)
     from . import pandora_db
     from PANDORA.Database import Database
@@ -317,7 +321,54 @@ def load_database(path: Path | None = None):
     ready, detail = pandora_db.database_ready()
     if not ready:
         raise FileNotFoundError(detail)
-    return Database.load(str(path or pandora_db.DATABASE_PATH))
+    database = Database.load(str(path or pandora_db.DATABASE_PATH))
+    return binary_templates_only(database) if binary_only else database
+
+
+def binary_templates_only(database):
+    """A copy of `database` with every TCR-bound (ternary) template removed.
+
+    **Measured, not assumed.** PANDORA ranks templates by peptide alignment score alone, which
+    is blind to whether the template was crystallized with a T-cell receptor. A homology model
+    inherits its template's peptide conformation, and the peptide sits differently in a ternary
+    complex than in a bare peptide-MHC one -- so an unrestricted run can pick a highly similar
+    ternary template and faithfully reproduce the wrong conformational state.
+
+    The Checkpoint 3 gate measured the size of that effect with similarity held constant
+    (`grains.validate_pandora`, `data/processed/pandora_gate.json`):
+
+    | Template for E01 | State | Shared with target | Core RMSD vs 1S9V |
+    |---|---|---|---|
+    | 4OZI | ternary | 10/11 | 0.90-0.96 Å |
+    | 6MFG | binary | 10/11 | **0.56-0.58 Å** |
+
+    0.35 Å at equal sequence similarity, against a 0.24 Å noise floor and a 1.16 Å
+    cross-deposition ceiling -- a large share of the usable range. A *less* similar binary
+    template (6MFF, 7/11) also beat the more similar ternary one, 0.68 vs 0.90 Å, so within
+    this range state dominates similarity.
+
+    This also matches the v1 scope decision: the project models peptide-MHC without a TCR, so
+    a ternary template is the wrong reference state for the question being asked.
+
+    Caveat to carry into the report: the effect is measured on **one peptide**. It is
+    consistent with Checkpoint 2's independent finding that 1S9V and 4OZI differ by
+    0.91-1.16 Å on the core, but it is n=1, so a panel peptide that models oddly is worth
+    re-checking against the full template set before concluding anything.
+
+    8 of the 12 DQ2.5 templates are ternary, so this is not a marginal filter -- it leaves
+    1S9V, 6MFF, 6MFG and 6U3M.
+    """
+    import copy
+
+    from . import pandora_db
+
+    ternary = pandora_db.tcr_bound(database)
+    subset = copy.copy(database)
+    subset.MHCII_data = {
+        pdb_id: template for pdb_id, template in database.MHCII_data.items()
+        if pdb_id not in ternary
+    }
+    return subset
 
 
 def pandora_model(

@@ -241,3 +241,80 @@ def test_longest_shared_run_is_the_longest_contiguous_match():
     assert longest_shared_run("LQPFPQPELPY", "QPFPQPELPYP") == "QPFPQPELPY"
     assert longest_shared_run("AAAA", "BBBB") == ""
     assert longest_shared_run("ABCDE", "XCDEY") == "CDE"
+
+
+# --- template conformational state ------------------------------------------------------
+
+def test_tcr_detection_separates_known_binary_from_known_ternary():
+    """1S9V is a bare peptide-MHC complex; 4OZI has a T-cell receptor bound.
+
+    Checkpoint 1 established that all of 4OZF-4OZI are TCR-bound, which is why 1S9V and not
+    4OZF became the validation structure. This re-derives it from IMGT's own annotation.
+    """
+    from grains import validate_pandora
+
+    if validate_pandora.is_tcr_bound("1S9V") is None:
+        pytest.skip("IMGT flat files not on disk")
+    assert validate_pandora.is_tcr_bound("1S9V") is False
+    assert validate_pandora.is_tcr_bound("4OZI") is True
+    assert validate_pandora.is_tcr_bound("6MFG") is False
+
+
+def test_most_dq25_templates_are_tcr_bound():
+    """The reason template state has to be controlled rather than assumed.
+
+    8 of the 12 DQ2.5 templates are ternary, so left alone PANDORA will often pick one and
+    inherit a peptide conformation from a complex that includes a TCR -- while this project's
+    v1 scope is deliberately peptide-MHC without a TCR.
+    """
+    from grains import validate_pandora
+
+    database = _database()
+    if validate_pandora.is_tcr_bound("1S9V") is None:
+        pytest.skip("IMGT flat files not on disk")
+    dq25 = modeling.templates_for_alleles(modeling.DQ25_ALLELES, database)
+    ternary = validate_pandora.tcr_bound(database)
+    binary = sorted(set(dq25) - ternary)
+    assert binary == ["1S9V", "6MFF", "6MFG", "6U3M"], binary
+    assert len(set(dq25) & ternary) == 8
+
+
+def test_binary_condition_leaves_a_similar_template_available():
+    """The controlled comparison only works if a binary template of comparable similarity
+    survives -- 6MFG shares 10 of 11 residues with the target, exactly as 4OZI does."""
+    from grains import validate_pandora
+
+    database = _database()
+    if validate_pandora.is_tcr_bound("1S9V") is None:
+        pytest.skip("IMGT flat files not on disk")
+    spec = validate_pandora.conditions(database)["no_exact_binary"]
+    subset = validate_pandora.restricted(database, spec["withhold"])
+    eligible = modeling.templates_for_alleles(modeling.DQ25_ALLELES, subset)
+    assert "6MFG" in eligible
+    shared = validate_pandora.longest_shared_run(
+        modeling.VALIDATION_PEPTIDE, subset.MHCII_data["6MFG"].peptide)
+    assert len(shared) == 10, shared
+
+
+def test_binary_only_database_excludes_every_ternary_template():
+    from grains import pandora_db
+
+    database = _database()
+    if pandora_db.is_tcr_bound("1S9V") is None:
+        pytest.skip("IMGT flat files not on disk")
+    subset = modeling.binary_templates_only(database)
+    assert not (set(subset.MHCII_data) & pandora_db.tcr_bound(database))
+    assert len(subset.MHCII_data) < len(database.MHCII_data)
+    # The original must not be mutated -- validate_pandora compares against the full set.
+    assert "4OZI" in database.MHCII_data
+
+
+def test_binary_only_still_leaves_dq25_templates_to_model_on():
+    database = _database()
+    from grains import pandora_db
+
+    if pandora_db.is_tcr_bound("1S9V") is None:
+        pytest.skip("IMGT flat files not on disk")
+    eligible = modeling.templates_for_alleles(
+        modeling.DQ25_ALLELES, modeling.binary_templates_only(database))
+    assert eligible == ["1S9V", "6MFF", "6MFG", "6U3M"], eligible

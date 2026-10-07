@@ -211,4 +211,37 @@ Each run also records the chosen template and the longest contiguous residue run
 the target, since that is the covariate that explains the RMSD: a template sharing 10 of 11
 residues is nearly the answer, one sharing 4 is a real prediction.
 
+A fourth condition, `no_exact_binary`, withholds 1S9V **and every ternary template**, which
+leaves 6MFG — binary, and sharing 10 of 11 residues exactly as 4OZI does. Similarity held
+constant, conformational state varied, which turns an observation into a controlled comparison.
+
+### Result
+
+| Condition | Template | State | Shared | Core RMSD vs 1S9V |
+|---|---|---|---|---|
+| `full_db` | 1S9V | binary | 11/11 | **0.16–0.23 Å** (circular) |
+| `no_exact` | 4OZI | ternary | 10/11 | 0.90–0.96 Å |
+| `no_core` | 6MFF | binary | 7/11 | **0.68–0.69 Å** |
+| `no_exact_binary` | 6MFG | binary | 10/11 | **0.56–0.58 Å** |
+
+Floor 0.24 Å, ceiling 1.16 Å. **Gate metric is `no_core` → 0.69 Å → PASS.**
+
+`full_db` lands *below the within-crystal floor*, which is the signature of copying rather than
+predicting — exactly why it is reported instead of used.
+
+The unexpected part: **`no_core` (7/11 shared) beat `no_exact` (10/11)**. Template conformational
+state matters more than sequence similarity here. 4OZI is TCR-bound, and a homology model
+inherits its template's peptide conformation, so building on it reproduced 4OZI faithfully
+*including* 4OZI's own 0.91–1.16 Å offset from binary 1S9V — the offset Checkpoint 2 had already
+measured from the crystals alone. `no_exact_binary` confirms it: at equal similarity, the binary
+template is **0.35 Å better**.
+
+Since PANDORA ranks templates by peptide alignment score alone — blind to TCR presence — and 8
+of the 12 DQ2.5 templates are ternary, Checkpoint 3 models the panel against **binary templates
+only** (`modeling.load_database(binary_only=True)`; see `modeling.binary_templates_only`). That
+also agrees with the v1 scope, which deliberately excludes the TCR.
+
+Measured on one peptide, so n=1 — consistent with Checkpoint 2's independent crystal comparison,
+but a panel peptide that models oddly is worth re-checking against the full template set.
+
 Results: `data/processed/rmsd_pandora.csv` and `data/processed/pandora_gate.json`.

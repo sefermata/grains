@@ -30,8 +30,18 @@ src/grains/        config.py, proteomes.py, fetch_hla.py, render_structure.py,
 tests/             pytest smoke tests for the reference data + structure handling
 docs/background.md    the biology, the question, what each pipeline stage is for — written to
                       be read cold; becomes the report's introduction
+docs/pandora_setup.md what was broken in csb-pandora 0.9 and how it's patched — read before
+                      touching the PANDORA route
 docs/checkpoints.md   the 5-checkpoint plan, dated 2026-09-08 → 2026-11-28
 ```
+
+**PANDORA needs a compatibility layer** (`src/grains/pandora_compat.py`, imported *before*
+PANDORA; `src/grains/pandora_db.py` for the template database). `csb-pandora` 0.9 is the only
+PyPI release and is broken two ways: three Biopython APIs removed since 1.80, and IMGT now
+being https-only while PANDORA requests http. Both patched at import time — nothing in
+`site-packages` is edited, so a reinstall can't silently undo it. Requires
+`muscle=3.8.1551` **specifically** (v5 renamed `-in`/`-out` and would write no alignment while
+exiting 0). Full account in `docs/pandora_setup.md`; 25 tests in `tests/test_pandora.py`.
 
 **Explaining this project to the user:** they are learning the immunology alongside the code and
 have asked twice for a simpler, deeper explanation — pitch at the level of `docs/background.md`,
@@ -42,7 +52,7 @@ from the biology up rather than from the tooling down, and don't assume MHC/pept
 ```bash
 pip install -r requirements.txt          # adds biopython to the Anaconda base env
 python -m grains.proteomes               # fetch seed-storage proteins from UniProt
-python -m pytest -q                      # 50 tests, currently green
+python -m pytest -q                      # 80 tests, currently green
 ```
 Python is Anaconda at `/opt/anaconda3/bin/python3` (3.13). `PYTHONPATH=src` for the module,
 or rely on `pyproject.toml`'s `pythonpath`.
@@ -77,6 +87,25 @@ Checked for circularity rather than assumed: 1S9V wasn't a template, 4OZI was, a
 is equidistant from both rather than hugging its template. Figure in
 `results/figures/af_vs_1S9V_overlay.png`. **MODELLER + PANDORA are installed and licensed.**
 
+*Checkpoint 3 — gate PASSED 2026-10-06; the panel is cleared to run.* PANDORA on E01 under four
+template-withholding conditions (`grains.validate_pandora`, `data/processed/pandora_gate.json`).
+**1S9V is itself one of PANDORA's 136 templates**, so a single run would have been circular —
+with nothing withheld it scores 0.16–0.23 Å, *below* the 0.24 Å within-crystal floor, which is
+the signature of copying rather than predicting. Gate metric is the honest condition (every
+E01-core-bearing template withheld): **0.69 Å**, inside the 1.16 Å cross-deposition ceiling.
+Time and disk are both non-issues: 136 templates in 3.8 min / 0.24 GB, ~75 s–5 min per peptide.
+
+**Protocol consequence — model the panel with `load_database(binary_only=True)`.** Template
+*conformational state* turned out to matter more than sequence similarity: a 7/11-similar binary
+template beat a 10/11-similar ternary one (0.68 vs 0.90 Å), because a homology model inherits
+its template's peptide conformation and so reproduced the TCR-bound 4OZI *including* 4OZI's own
+offset from binary 1S9V. Isolated with similarity held constant: 6MFG, binary, 10/11 → 0.56 Å,
+a **0.35 Å** gain. PANDORA ranks templates by peptide alignment alone, blind to TCR presence,
+and **8 of the 12 DQ2.5 templates are ternary**. n=1 (one peptide), so re-check a panel peptide
+that models oddly. Also record the chosen template + shared-run length per complex — if toxic
+peptides systematically get better templates, the comparison measures template availability
+rather than binding.
+
 *Standing constraint:* Checkpoint 3 locks **PANDORA as the only route** for complexes that get
 PRODIGY-scored (AlphaFold Server ToS bars its output from binding predictors);
 `modeling.assert_scorable()` enforces it in code.
@@ -87,7 +116,7 @@ result that arrives looking computed rather than erroneous. Paid for so far: a d
 being the reverse of their chain lettering** (J binds A/B — pairing by letter gives a 62 Å
 peptide RMSD); wrong PMIDs that still resolve to real papers; a readiness check that passed on
 an unvalidated MODELLER license. The habit that catches these: assert the assumption in code
-and keep the bad case as a regression test. 50 tests, green.
+and keep the bad case as a regression test. 80 tests, green.
 
 Two carry-forwards into Checkpoint 3/4 statistics: **E03 and E06 overlap by 7 of 9 residues**
 (wheat ω-gliadin vs rye secalin — the same motif, which is itself part of why rye is toxic) so
