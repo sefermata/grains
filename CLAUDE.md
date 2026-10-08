@@ -152,8 +152,8 @@ A five-part intro-data-science project for the user's Sierra College Tutor Cente
 random split (random split is near-saturated). A `check_*` helper after every question,
 including written ones.
 
-**State (2026-10-05):** spec + dataset + rationale done. Parts 0–3 built in both tracks;
-solutions execute clean. Parts 0–2 reviewed and revised; **Parts 4–5 not built yet.**
+**State (2026-10-05):** spec + dataset + rationale done. Parts 0–4 built in both tracks;
+solutions execute clean. Parts 0–3 reviewed and revised; **Part 5 not built yet.**
 (Bootstrap part cut; parts run 0–5. The module is unscored.) Regenerate *and verify* with
 `./rebuild.sh`, which runs `build_notebooks.py` and then executes both solutions notebooks —
 Part 3's simulation makes the `datascience` run take ~11 s, which is expected.

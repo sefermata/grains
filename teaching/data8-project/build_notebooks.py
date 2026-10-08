@@ -90,7 +90,7 @@ WHY = r"""
 Some grains harm people with celiac disease because of a protein
 called **gluten**. Gluten is hard to digest, and fragments of it set off an immune reaction
 in the small intestine. Researchers study exactly how those fragments fit into an immune
-receptor using 3-D structure prediction. This project asks a simpler version of the same
+receptor using 3D structure prediction. This project asks a simpler version of the same
 question: *can the amino-acid makeup of a grain's proteins,
 by itself, separate the harmful grains from the harmless ones?* And there's a built-in
 answer key, that is, we already know which grains are which, so you can tell whether your method
@@ -276,6 +276,31 @@ def check_q3_3(simulated_diffs, observed_diff):
     ])
 
 
+def check_q4_1(motif_rate):
+    # Non-overlapping cases first, so a scaling mistake is reported as a scaling mistake.
+    # Only once those pass does an overlap case fail, and then the overlap hint is the right one.
+    cases = [
+        (('PQPQ', 'PQ'), 50.0),
+        (('PQ', 'PQ'), 50.0),
+        (('AAAA', 'PQ'), 0.0),
+        (('PQPQPQPQPQ', 'PQ'), 50.0),
+        (('QQQ', 'QQ'), 200 / 3),
+        (('QQQQ', 'QQ'), 75.0),
+    ]
+    try:
+        got = [motif_rate(s, m) for (s, m), _ in cases]
+    except Exception as e:
+        print('x  Q4.1: motif_rate(seq, motif) raised ' + type(e).__name__ + ': ' + str(e)); return
+    checks = []
+    for ((s, m), want), g in zip(cases, got):
+        ok = isinstance(g, (int, float, np.floating)) and abs(float(g) - want) < 1e-9
+        hint = 'motif_rate(' + repr(s) + ', ' + repr(m) + ') should be ' + format(want, '.4g') + ', got ' + repr(g)
+        if not ok and s in ('QQQ', 'QQQQ'):
+            hint += '. Overlapping copies count separately: QQQ contains QQ twice, at positions 0 and 1. str.count only finds non-overlapping ones'
+        checks.append((ok, hint))
+    _report('Q4.1', checks)
+
+
 def check_q3_4_plot(simulated_diffs):
     ax = _current_axes()
     n_bars = len(ax.patches) if ax is not None else 0
@@ -362,6 +387,46 @@ def check_q2_4(by_grain):
     ])
 
 
+def _true_motif(seqs):
+    return np.array([sum(1 for i in range(len(s) - 1) if s[i:i + 2] == 'PQ') / len(s) * 100 for s in seqs])
+
+
+def check_q4_2(grains):
+    if 'pq_motif' not in grains.labels:
+        print('x  Q4.2: grains has no pq_motif column yet - remember with_columns returns a NEW table'); return
+    _report('Q4.2', [
+        (np.allclose(grains.column('pq_motif'), _true_motif(grains.column('sequence'))),
+         'pq_motif should be motif_rate(sequence, "PQ") for every row'),
+    ])
+
+
+def check_q4_3(motif_means):
+    try:
+        g = motif_means.where('gluten', are.equal_to('yes')).column('pq_motif mean').item(0)
+        s = motif_means.where('gluten', are.equal_to('no')).column('pq_motif mean').item(0)
+    except Exception:
+        print('x  Q4.3: motif_means should be a Table grouped by gluten with mean columns for pq_frac and pq_motif'); return
+    _report('Q4.3', [
+        (motif_means.num_rows == 2, 'expected 2 rows (one per gluten value), got ' + str(motif_means.num_rows)),
+        (abs(g - 6.05) < 0.1, 'mean pq_motif for gluten == yes should be about 6.0, got ' + format(g, '.2f')),
+        (abs(s - 0.47) < 0.1, 'mean pq_motif for gluten == no should be about 0.5, got ' + format(s, '.2f')),
+    ])
+
+
+def check_q4_4(motif_by_grain):
+    try:
+        order = list(motif_by_grain.column('grain'))
+        vals = list(motif_by_grain.column('pq_motif mean'))
+    except Exception:
+        print('x  Q4.4: motif_by_grain should be a Table with a grain column and mean columns for pq_frac and pq_motif'); return
+    _report('Q4.4', [
+        (len(order) == 10, 'expected 10 grains, got ' + str(len(order))),
+        ('pq_frac mean' in motif_by_grain.labels, 'keep pq_frac in the table too - the point is to compare the two features side by side'),
+        (order[:3] == ['rye', 'barley', 'wheat'], 'sorted by pq_motif largest first, the top three should be rye, barley, wheat; got ' + str(order[:3])),
+        (vals == sorted(vals, reverse=True), 'sort by the pq_motif mean, largest first'),
+    ])
+
+
 def check_q3_1(observed_diff, grains):
     yes = grains.where('gluten', are.equal_to('yes')).column('pq_frac').mean()
     no = grains.where('gluten', are.equal_to('no')).column('pq_frac').mean()
@@ -433,6 +498,46 @@ def check_q2_4(by_grain):
     ])
 
 
+def _true_motif(seqs):
+    return np.array([sum(1 for i in range(len(s) - 1) if s[i:i + 2] == 'PQ') / len(s) * 100 for s in seqs])
+
+
+def check_q4_2(grains):
+    if 'pq_motif' not in grains.columns:
+        print('x  Q4.2: grains has no pq_motif column yet'); return
+    _report('Q4.2', [
+        (np.allclose(grains['pq_motif'].values, _true_motif(grains['sequence'].values)),
+         'pq_motif should be motif_rate(sequence, "PQ") for every row'),
+    ])
+
+
+def check_q4_3(motif_means):
+    try:
+        g = motif_means.loc['yes', 'pq_motif']
+        s = motif_means.loc['no', 'pq_motif']
+    except Exception:
+        print('x  Q4.3: motif_means should be a DataFrame indexed by gluten, with pq_frac and pq_motif columns'); return
+    _report('Q4.3', [
+        (len(motif_means) == 2, 'expected 2 rows (one per gluten value), got ' + str(len(motif_means))),
+        (abs(g - 6.05) < 0.1, 'mean pq_motif for gluten == yes should be about 6.0, got ' + format(g, '.2f')),
+        (abs(s - 0.47) < 0.1, 'mean pq_motif for gluten == no should be about 0.5, got ' + format(s, '.2f')),
+    ])
+
+
+def check_q4_4(motif_by_grain):
+    try:
+        order = list(motif_by_grain.index)
+        vals = list(motif_by_grain['pq_motif'])
+    except Exception:
+        print('x  Q4.4: motif_by_grain should be a DataFrame indexed by grain, with pq_frac and pq_motif columns'); return
+    _report('Q4.4', [
+        (len(order) == 10, 'expected 10 grains, got ' + str(len(order))),
+        ('pq_frac' in motif_by_grain.columns, 'keep pq_frac in the table too - the point is to compare the two features side by side'),
+        (order[:3] == ['rye', 'barley', 'wheat'], 'sorted by pq_motif largest first, the top three should be rye, barley, wheat; got ' + str(order[:3])),
+        (vals == sorted(vals, reverse=True), 'sort by the pq_motif column, largest first'),
+    ])
+
+
 def check_q3_1(observed_diff, grains):
     yes = grains[grains['gluten'] == 'yes']['pq_frac'].mean()
     no = grains[grains['gluten'] == 'no']['pq_frac'].mean()
@@ -472,7 +577,7 @@ def part0(track: str, version: str) -> list[dict]:
         | `sequence` | The protein itself: a string of capital letters, one per amino acid | **Yes! Every number we build comes from this column.** |
 
         You'll see the same `protein_name` (and the same `grain`) on many rows. That's
-        expected: a grain has many storage-protein genes and many database entries, and
+        expected - a grain has many storage-protein genes and many database entries, and
         each row is one protein record.
     """))
 
@@ -527,10 +632,10 @@ def part0(track: str, version: str) -> list[dict]:
 
         **Predict first.** A friend says, "I don't need to look at any protein. I'll just
         say `'no'` every time." Will your friend be right more than half the time, less than
-        half, or about half? Decide, then compute it below.
+        half, or about half?
 
         Suppose you ignored the `sequence` entirely and, for every row, just guessed whichever
-        `gluten` value shows up more often. How often would that be right?
+        `gluten` value shows up more often. How often would that be right? Decide, then compute it below.
 
         Count the `'no'` rows and the `'yes'` rows, then set `baseline_accuracy` to the
         larger count divided by the total number of rows.
@@ -593,7 +698,8 @@ def part0(track: str, version: str) -> list[dict]:
         completely useless, because it never finds a single gluten protein. Our data is
         close to balanced, so our baseline is low, but not every dataset is like that.
 
-        **Finish this sentence in `answer_q0_3`, using your own words:**
+        **In `answer_q0_3`, either finish this sentence or write the same idea in your own
+        words — whichever is easier to think in:**
 
         *"If my model only got about this % accuracy, that would mean ______, because ______."*
     """))
@@ -601,11 +707,19 @@ def part0(track: str, version: str) -> list[dict]:
         version,
         scaffold="answer_q0_3 = 'your answer here'\n\ncheck_written('Q0.3 written', answer_q0_3)",
         solution=(
+            "# Either shape of answer is fine. Filling in the blanks:\n"
             "answer_q0_3 = (\n"
+            "    'If my model only got about this % accuracy, that would mean it had learned nothing '\n"
+            "    'from the sequence, because that is exactly the accuracy you get by ignoring the '\n"
+            "    'sequence and always guessing whichever label is more common.'\n"
+            ")\n\n"
+            "# Or the same idea in your own words:\n"
+            "answer_in_own_words = (\n"
             "    'It is the accuracy of a model that ignores the sequence completely, so any real '\n"
             "    'model has to beat it to be worth anything. Reaching only this number would mean '\n"
             "    'the model learned the class sizes, not the biology.'\n"
-            ")\n\ncheck_written('Q0.3 written', answer_q0_3)"
+            ")\n\n"
+            "check_written('Q0.3 written', answer_q0_3)"
         ),
     ))
     return cells
@@ -716,9 +830,10 @@ def part1(track: str, version: str) -> list[dict]:
             (= `p_frac + q_frac`), computed from the `sequence` column with the functions
             you just wrote.
 
-            **Hints:** `with_columns` on its own returns a *new* table rather than changing `grains` itself. Make sure the result actually gets saved back to `grains`! A `Table` also
-            has an `apply` method that runs a function down every value in one column; look
-            it up in the `datascience` docs if you haven't used it yet.
+            **Hints:** `with_columns` on its own returns a *new* table rather than changing
+            `grains` itself. Make sure the result actually gets saved back to `grains`! A
+            `Table` also has an `apply` method that runs a function down every value in one
+            column.
         """))
         cells.append(solvable(
             version,
@@ -811,10 +926,10 @@ def part1(track: str, version: str) -> list[dict]:
     ))
     cells.append(md(r"""
         Look at the four numbers you just printed. You want to say which of these two
-        proteins is **more proline-rich** — and the two measures disagree. The raw count
+        proteins is **more proline-rich**, and the two measures disagree. The raw count
         picks one protein; the proline fraction picks the other.
 
-        So the question is not which protein wins, but which *measure* settles it fairly:
+        So the question is not which protein wins, but which measure settles it fairly:
         the raw count, or the fraction? Write one sentence in `answer_q1_4` saying which one
         you would trust here, and why.
     """))
@@ -1089,18 +1204,12 @@ def part2(track: str, version: str) -> list[dict]:
         ### Question 2.5
 
         Wheat, barley, and rye are three grains known to trigger celiac disease. Which
-        **non-gluten** grains come closest to those three gluten grains? Name them, and say why
-        that matters for a classifier that only looks at P and Q content.
+        **non-gluten** grains come closest to those three gluten grains? Name them, using the
+        table `by_grain` you just made.
 
-        Answer this from `by_grain`, not from the plots. Both plots color by `gluten`, so they
-        can show you *that* the two groups overlap — which is what you wrote about in Q2.2 —
-        but neither one knows a maize protein from a rice protein. Only Q2.4's table is broken
-        out far enough to name the grains in that overlap. Worth noticing in its own right: the
-        picture that shows a problem exists and the table that identifies it are often not the
-        same display.
 
         A **classifier** is a rule that predicts a label. Think about what a
-        rule like "high `pq_frac` means gluten" would say about these grains, and whether it
+        classifier like "high `pq_frac` means gluten" would say about these grains, and whether it
         would be right. Write one or two sentences in `answer_q2_5`.
     """))
     cells.append(solvable(
@@ -1206,9 +1315,9 @@ def part3(track: str, version: str) -> list[dict]:
         A permutation test needs a **null hypothesis**: a specific, boring story about how the
         data could have come out this way with nothing interesting going on.
 
-        The dataset holds **118 gluten proteins and 133 non-gluten ones** — the two counts your
-        Q0.3 cell prints. The null hypothesis is not about those counts; they are just how many
-        of each we happened to collect, and they stay fixed no matter what. It is about the
+        The dataset holds 118 gluten proteins and 133 non-gluten ones. The null hypothesis is
+        not about those counts; they are just how many of each we happened to collect, and they
+        stay fixed no matter what. It is about the
         *gap* you measured in Q3.1.
 
         So the boring story goes: the `gluten` label tells you nothing about `pq_frac`. The 251
@@ -1239,9 +1348,9 @@ def part3(track: str, version: str) -> list[dict]:
         difference in means the same way you did in Q3.1. That is one difference the null
         hypothesis could have produced.
 
-        Do that 5,000 times and keep every answer. (5,000 is a convention, not a derived number
-        — enough that the shape of the result settles down, few enough to finish while you
-        wait. This part takes about ten seconds to run.)
+        Do that 5,000 times and keep every answer. (5,000 is a convention, not a derived
+        number. Just enough that the shape of the result settles down, few enough to finish
+        while you wait. This part takes about ten seconds to run.)
 
         Write `one_simulated_difference()` so it returns a single trial's difference, then call
         it 5,000 times and collect the results in `simulated_diffs`.
@@ -1250,8 +1359,7 @@ def part3(track: str, version: str) -> list[dict]:
         cells.append(md(r"""
             **Hint:** `grains.sample(with_replacement=False)` returns the whole table with its
             rows in a random order. Called with no `k` it takes *all* 251 rows, and without
-            replacement each row comes back exactly once — so it is a shuffle, not a subset,
-            and the 118/133 split survives it untouched.
+            replacement each row comes back exactly once.
         """))
         cells.append(solvable(
             version,
@@ -1334,8 +1442,6 @@ def part3(track: str, version: str) -> list[dict]:
     cells.append(md(r"""
         ### Question 3.4
 
-        This one comes in two steps, one cell each: draw the picture first, then do the
-        arithmetic. Run each cell before reading on.
     """))
 
     # Step 1 — the null distribution
@@ -1343,48 +1449,44 @@ def part3(track: str, version: str) -> list[dict]:
         **Step 1 — draw the null distribution.**
 
         Your 5,000 simulated differences *are* the null distribution: the whole range of gaps
-        the boring story produces. Draw them as a histogram, and mark `observed_diff` on the
-        same axes so you can see where the real gap falls against them.
+        the boring story produces. Draw them as a histogram, using
+        `bins=np.arange(-0.10, 0.10, 0.005)`. Everything else in the cell is written for you.
 
-        Use `bins=np.arange(-0.10, 0.10, 0.005)`, and keep the plot and the check in this one
-        cell — the check reads whatever figure the cell just drew.
+        Keep the plot and the check in this one cell — the check reads whatever figure the cell
+        just drew.
     """))
     if track == "ds":
-        cells.append(md(r"""
-            **Hint:** `plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)` drops a red
-            dot on the axis at the observed value.
-        """))
         step1_scaffold = (
-            "# GIVEN - just run this. The datascience library draws histograms from a table\n"
-            "# column, so this wraps your array in a one-column table for it. Nothing to change.\n"
+            "# Don't change this line. The datascience library draws histograms from a table\n"
+            "# column, so this wraps your array in a one-column table for it.\n"
             "simulated_table = Table().with_column('simulated difference', simulated_diffs)\n\n"
-            "...   # histogram of simulated_table, using the bins above\n"
-            "...   # mark observed_diff on the plot\n"
+            "...   # histogram of simulated_table, using the bins above\n\n"
+            "# This adds a red dot on the axis at the observed value.\n"
+            "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
             "plt.xlabel('difference in mean pq_frac')\n"
             "check_q3_4_plot(simulated_diffs)"
         )
         step1_solution = (
-            "# GIVEN - just run this. The datascience library draws histograms from a table\n"
-            "# column, so this wraps your array in a one-column table for it. Nothing to change.\n"
+            "# Don't change this line. The datascience library draws histograms from a table\n"
+            "# column, so this wraps your array in a one-column table for it.\n"
             "simulated_table = Table().with_column('simulated difference', simulated_diffs)\n\n"
-            "simulated_table.hist(bins=np.arange(-0.10, 0.10, 0.005))\n"
+            "simulated_table.hist(bins=np.arange(-0.10, 0.10, 0.005))\n\n"
+            "# This adds a red dot on the axis at the observed value.\n"
             "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
             "plt.xlabel('difference in mean pq_frac')\n"
             "check_q3_4_plot(simulated_diffs)"
         )
     else:
-        cells.append(md(r"""
-            **Hint:** `plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)` drops a red
-            dot on the axis at the observed value.
-        """))
         step1_scaffold = (
-            "...   # histogram of simulated_diffs, using the bins above\n"
-            "...   # mark observed_diff on the plot\n"
+            "...   # histogram of simulated_diffs, using the bins above\n\n"
+            "# This adds a red dot on the axis at the observed value.\n"
+            "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
             "plt.xlabel('difference in mean pq_frac')\n"
             "check_q3_4_plot(simulated_diffs)"
         )
         step1_solution = (
-            "plt.hist(simulated_diffs, bins=np.arange(-0.10, 0.10, 0.005))\n"
+            "plt.hist(simulated_diffs, bins=np.arange(-0.10, 0.10, 0.005))\n\n"
+            "# This adds a red dot on the axis at the observed value.\n"
             "plt.scatter(observed_diff, 0, color='red', s=60, zorder=3)\n"
             "plt.xlabel('difference in mean pq_frac')\n"
             "check_q3_4_plot(simulated_diffs)"
@@ -1392,15 +1494,15 @@ def part3(track: str, version: str) -> list[dict]:
     cells.append(solvable(version, scaffold=step1_scaffold, solution=step1_solution))
 
     cells.append(md(r"""
-        Look at how far apart those two things are before going on. The red dot is not out in
-        the tail of the null distribution — it is off the end of it entirely, with every
-        simulated difference bunched near zero. Not one shuffle in 5,000 got anywhere close.
+        Look at how far apart those two things are! The red dot is not out in
+        the tail of the null distribution — it is off the end of it entirely! Every
+        simulated difference is bunched near zero. Not one shuffle in 5,000 got anywhere close.
 
         **Step 2 — put a number on it.**
 
         The p-value is the share of simulated differences that are *at least as large as*
-        `observed_diff` — the question "if the null hypothesis were true, how often would I see
-        a gap this big?" turned into arithmetic.
+        `observed_diff`. It answers the the question, "if the null hypothesis were true, how often would I see
+        a gap this big?"
 
         Compute it in two pieces: `n_at_least`, the count, and then `p_value`, that count
         divided by the number of trials. Keeping the count as its own variable is worth it —
@@ -1429,25 +1531,42 @@ def part3(track: str, version: str) -> list[dict]:
         ),
     ))
     cells.append(md(r"""
-        Your count came out as zero out of 5,000, so the p-value is exactly `0.0` — and that
-        number is worth reading carefully, because it does not mean the probability is zero. It
-        means the probability is smaller than this simulation can measure. With 5,000 trials the
-        smallest non-zero answer available is 1/5000 = 0.0002, so the honest way to report this
-        is **p < 0.0002**, not **p = 0**. Running more trials would buy you a smaller ceiling,
-        never a zero.
+        Your count came out as zero out of 5,000, so the p-value is exactly `0.0`. Two things
+        about that number are worth getting exactly right.
+
+        **First: the probability of what?** This is the easiest thing in statistics to say
+        backwards, so it is worth spelling out. A p-value is the probability of seeing a gap
+        *at least as big as yours* **in a world where the null hypothesis is true**. Your 5,000
+        shuffles were that world — 5,000 draws from it — and not one of them reached 0.2881.
+
+        It is **not** the probability that the null hypothesis is true. The simulation cannot
+        tell you that, because every trial it ran had the null built in as an assumption. You
+        can ask a world "how often does this happen here?" You cannot ask it "are you real?"
+
+        **Second: `0.0` does not mean impossible.** It means it did not happen in 5,000 tries.
+        With 5,000 trials the smallest non-zero answer available is 1/5000 = 0.0002, so the
+        honest way to report this is **p < 0.0002**, not **p = 0**. Running more trials would
+        buy you a smaller ceiling, never a zero.
     """))
 
     # ---- Q3.5: written ------------------------------------------------------
     cells.append(md(r"""
         ### Question 3.5
 
-        A p-value answers one narrow question and is routinely asked to answer several others.
-        In `answer_q3_5`, write two or three sentences on what this result does let you
-        conclude — and, just as important, what it does **not** tell you.
+        A p-value answers one narrow question and gets asked to answer several others. The
+        paragraph above ruled out the first misreading — it is not the probability that the
+        null hypothesis is true. Two more are worth ruling out, and both matter for where this
+        project goes next.
 
-        Two things worth thinking about before you write: does a small p-value mean the
-        difference is *large*? And does it mean you could now use `pq_frac` to *tell which
-        grain a new protein came from*?
+        **Does a small p-value mean the difference is big?** You have two numbers in hand:
+        a gap of `0.2881` and a p-value under 0.0002. They are separate facts. Which of the
+        two is telling you the *size* of the gap, and what is the other one telling you?
+
+        **Does it mean `pq_frac` can now identify which grain a new protein came from?** Look
+        back at `by_grain` from Q2.4 before you answer this one.
+
+        In `answer_q3_5`, write two or three sentences: what this result *does* let you
+        conclude, and what it does not.
     """))
     cells.append(solvable(
         version,
@@ -1456,10 +1575,12 @@ def part3(track: str, version: str) -> list[dict]:
             "answer_q3_5 = (\n"
             "    'It lets me rule out the boring explanation: a gap this big essentially never comes '\n"
             "    'out of random labeling, so the gluten label and pq_frac really are related. It does '\n"
-            "    'not tell me the difference is large - a p-value measures how surprising the gap is '\n"
-            "    'under the null, not how big it is. And it says nothing about prediction: oat, maize, '\n"
-            "    'and sorghum still sit close to the gluten grains, so a rule based on pq_frac alone '\n"
-            "    'can be clearly better than chance and still get those three wrong.'\n"
+            "    'not tell me how likely the null hypothesis is, because the simulation assumed the '\n"
+            "    'null the whole way through. It does not tell me the gap is big either - that is '\n"
+            "    'what observed_diff measures, and 0.2881 would have the same p-value here whether I '\n"
+            "    'thought it was a lot or a little. And it says nothing about prediction: oat, maize, '\n"
+            "    'and sorghum still sit close to the gluten grains in by_grain, so a rule based on '\n"
+            "    'pq_frac alone can be clearly better than chance and still get those three wrong.'\n"
             ")\n\ncheck_written('Q3.5 written', answer_q3_5)"
         ),
     ))
@@ -1470,6 +1591,243 @@ def part3(track: str, version: str) -> list[dict]:
         low bar — it says the difference exists, not that it is useful. Part 4 goes after a
         sharper feature, one that counts not just *how much* P and Q a protein has but how they
         are arranged, and watches what that does to the three borderline grains.
+    """))
+    return cells
+
+
+# --------------------------------------------------------------------------- #
+#  Part 4
+# --------------------------------------------------------------------------- #
+
+def part4(track: str, version: str) -> list[dict]:
+    cells = [md(r"""
+        ## Part 4 — A sharper feature
+
+        Part 3 settled that the gap is real. It did not make the gap *useful*, and Q2.4 showed
+        why: oat, maize, and sorghum sit between the two groups. Their storage proteins are
+        prolamins too, so they really are rich in P and Q, and any rule built on `pq_frac`
+        alone has to either miss some gluten or wrongly flag them.
+
+        So the problem is not the threshold. It's the feature. `pq_frac` counts **how much** P
+        and Q a protein has and ignores **how they are arranged** — and arrangement is where
+        gluten is actually distinctive. The immune-triggering stretches of gluten are built
+        from tandem repeats, long runs of `...PQPQPQ...`, while maize and sorghum carry their
+        P and Q scattered through the sequence instead.
+
+        In this part you build a feature that can tell those apart, and watch what it does to
+        the three borderline grains.
+    """)]
+
+    # ---- Q4.1: motif_rate ---------------------------------------------------
+    cells.append(md(r"""
+        ### Question 4.1
+
+        Write `motif_rate(seq, motif)`: the number of times `motif` appears in `seq`, per 100
+        residues. Dividing by length is the same move as in Q1.2 — it keeps long and short
+        proteins comparable — and the ×100 just keeps the numbers readable.
+
+        **Count overlapping copies separately.** This is the part worth slowing down on. The
+        string `'QQQ'` contains `'QQ'` **twice**: once starting at position 0, once at position
+        1. They share a letter, and both count.
+
+        Python's built-in `'QQQ'.count('QQ')` returns **1**, because `str.count` skips past
+        each match it finds. So you cannot use it here — walk the positions yourself and check
+        the slice at each one.
+    """))
+    cells.append(md(r"""
+        > **Why this matters even though it looks like a technicality.** For the motif we
+        > actually care about, `'PQ'`, two copies can never overlap — `P` and `Q` are different
+        > letters — so `str.count` would give you the right answer on this dataset and you'd
+        > never find out. The check below tests `'QQ'` on `'QQQ'` precisely because that is the
+        > case that tells a correct function from a lucky one.
+    """))
+    cells.append(solvable(
+        version,
+        scaffold=r"""
+            def motif_rate(seq, motif):
+                count = 0
+                last_start = len(seq) - len(motif)
+                for i in np.arange(last_start + 1):
+                    ...   # if the slice of seq starting at i matches motif, add 1 to count
+                return ...   # count, per 100 residues
+
+            check_q4_1(motif_rate)
+        """,
+        solution=r"""
+            def motif_rate(seq, motif):
+                count = 0
+                last_start = len(seq) - len(motif)
+                for i in np.arange(last_start + 1):
+                    if seq[i:i + len(motif)] == motif:
+                        count = count + 1
+                return count / len(seq) * 100
+
+            check_q4_1(motif_rate)
+        """,
+    ))
+
+    # ---- Q4.2: the column ---------------------------------------------------
+    cells.append(md(r"""
+        ### Question 4.2
+
+        Add a `pq_motif` column to `grains`: `motif_rate(sequence, 'PQ')` for every row.
+
+        `apply` hands your function one argument — the value in the column — so it can't pass
+        `'PQ'` along for you. Write a small one-argument helper that calls `motif_rate` with
+        the motif already filled in, and apply that.
+    """))
+    if track == "ds":
+        cells.append(solvable(
+            version,
+            scaffold=r"""
+                def pq_motif_rate(seq):
+                    return ...
+
+                grains = ...   # add a pq_motif column built with pq_motif_rate
+
+                grains.select('grain', 'gluten', 'pq_frac', 'pq_motif').show(5)
+                check_q4_2(grains)
+            """,
+            solution=r"""
+                def pq_motif_rate(seq):
+                    return motif_rate(seq, 'PQ')
+
+                grains = grains.with_columns('pq_motif', grains.apply(pq_motif_rate, 'sequence'))
+
+                grains.select('grain', 'gluten', 'pq_frac', 'pq_motif').show(5)
+                check_q4_2(grains)
+            """,
+        ))
+    else:
+        cells.append(solvable(
+            version,
+            scaffold=r"""
+                def pq_motif_rate(seq):
+                    return ...
+
+                grains['pq_motif'] = ...
+
+                display(grains[['grain', 'gluten', 'pq_frac', 'pq_motif']].head(5))
+                check_q4_2(grains)
+            """,
+            solution=r"""
+                def pq_motif_rate(seq):
+                    return motif_rate(seq, 'PQ')
+
+                grains['pq_motif'] = grains['sequence'].apply(pq_motif_rate)
+
+                display(grains[['grain', 'gluten', 'pq_frac', 'pq_motif']].head(5))
+                check_q4_2(grains)
+            """,
+        ))
+
+    # ---- Q4.3: by gluten ----------------------------------------------------
+    cells.append(md(r"""
+        ### Question 4.3
+
+        First the coarse view. Build `motif_means`: the mean `pq_frac` **and** the mean
+        `pq_motif` for each `gluten` value. Keeping both columns is the point — you want to see
+        the two features side by side, not one after the other.
+    """))
+    if track == "ds":
+        cells.append(solvable(
+            version,
+            scaffold="motif_means = ...\nmotif_means.show()\n\ncheck_q4_3(motif_means)",
+            solution=(
+                "motif_means = grains.select('gluten', 'pq_frac', 'pq_motif').group('gluten', np.mean)\n"
+                "motif_means.show()\n\ncheck_q4_3(motif_means)"
+            ),
+        ))
+    else:
+        cells.append(solvable(
+            version,
+            scaffold="motif_means = ...\ndisplay(motif_means)\n\ncheck_q4_3(motif_means)",
+            solution=(
+                "motif_means = grains.groupby('gluten')[['pq_frac', 'pq_motif']].mean()\n"
+                "display(motif_means)\n\ncheck_q4_3(motif_means)"
+            ),
+        ))
+    cells.append(md(r"""
+        Compare the two columns as *ratios*, not differences, since they are in different units.
+        On `pq_frac` the gluten group is a bit under 3× the rest. On `pq_motif` it is closer to
+        13×. The second feature separates the two groups far more sharply than the first.
+    """))
+
+    # ---- Q4.4: by grain -----------------------------------------------------
+    cells.append(md(r"""
+        ### Question 4.4
+
+        Now the view that matters. Build `motif_by_grain`: mean `pq_frac` and mean `pq_motif`
+        for each `grain`, sorted by mean `pq_motif` with the largest first.
+
+        This is Q2.4's table with one column added, and the added column is the whole argument
+        of Part 4. Watch what happens to the three grains that were stuck in the middle.
+    """))
+    if track == "ds":
+        cells.append(solvable(
+            version,
+            scaffold="motif_by_grain = ...\nmotif_by_grain.show()\n\ncheck_q4_4(motif_by_grain)",
+            solution=(
+                "motif_by_grain = grains.select('grain', 'pq_frac', 'pq_motif').group('grain', np.mean).sort('pq_motif mean', descending=True)\n"
+                "motif_by_grain.show()\n\ncheck_q4_4(motif_by_grain)"
+            ),
+        ))
+    else:
+        cells.append(solvable(
+            version,
+            scaffold="motif_by_grain = ...\ndisplay(motif_by_grain)\n\ncheck_q4_4(motif_by_grain)",
+            solution=(
+                "motif_by_grain = grains.groupby('grain')[['pq_frac', 'pq_motif']].mean().sort_values('pq_motif', ascending=False)\n"
+                "display(motif_by_grain)\n\ncheck_q4_4(motif_by_grain)"
+            ),
+        ))
+    cells.append(md(r"""
+        Read the two columns across for maize and sorghum. On `pq_frac` they sit at 0.27 and
+        0.26 against roughly 0.47 for the gluten grains and 0.12–0.14 for the clearly safe
+        ones — stranded in between, which is exactly the problem Q2.5 asked you to name. On
+        `pq_motif` they drop to 0.8, down with buckwheat and quinoa and far below wheat's 5.0.
+        They are not borderline on this feature at all.
+
+        Oat is the honest exception. It falls from the middle too, but only to 1.5, still a few
+        times higher than the safe grains. That is not a flaw in the feature — oat avenin
+        genuinely does carry some repeat structure, which is part of why oat's safety in celiac
+        disease is more contested than rice's. Hold onto that: two oat proteins are waiting in
+        the mystery set in Part 5.
+    """))
+
+    # ---- Q4.5: written ------------------------------------------------------
+    cells.append(md(r"""
+        ### Question 4.5
+
+        A feature is **specific** when a high value really does mean the thing you care about,
+        rather than something that merely travels with it. `pq_frac` turned out not to be:
+        plenty of maize protein scores high on it without being gluten.
+
+        In `answer_q4_5`, write two or three sentences on why counting `PQ` repeats is more
+        specific to real gluten than counting P and Q separately. What can the repeat rate
+        see that the fraction cannot?
+    """))
+    cells.append(solvable(
+        version,
+        scaffold="answer_q4_5 = 'your answer here'\n\ncheck_written('Q4.5 written', answer_q4_5)",
+        solution=(
+            "answer_q4_5 = (\n"
+            "    'pq_frac only measures how much P and Q a protein contains, so any prolamin that '\n"
+            "    'happens to be rich in those two amino acids scores high - which is why maize and '\n"
+            "    'sorghum looked borderline. The motif rate measures arrangement instead of amount: '\n"
+            "    'it only counts P and Q that sit next to each other in tandem repeats, which is the '\n"
+            "    'structure the immunogenic gluten fragments are actually made of. Maize and sorghum '\n"
+            "    'have the residues without that arrangement, so they drop to the safe cluster.'\n"
+            ")\n\ncheck_written('Q4.5 written', answer_q4_5)"
+        ),
+    ))
+
+    cells.append(md(r"""
+        ---
+        **Part 4 done.** You now have two features that disagree about three grains, and good
+        reason to trust the second one. Part 5 stops arguing and tests it: build a classifier,
+        feed it each feature set in turn, and see which one holds up on proteins it has never
+        seen.
     """))
     return cells
 
@@ -1493,6 +1851,7 @@ def build(track: str, version: str) -> dict:
         *part1(track, version),
         *part2(track, version),
         *part3(track, version),
+        *part4(track, version),
     ]
     return {"cells": cells, "metadata": NB_METADATA, "nbformat": 4, "nbformat_minor": 4}
 

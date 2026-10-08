@@ -270,18 +270,41 @@ three questions are simple to re-add if time allows:
 
 ## Part 4 — A sharper feature
 
+**Built as five questions, not four** — the spec's Q4.3 ("group means by `gluten`, and by
+`grain`") became two, because the by-grain table is the part that carries the argument and it
+deserved its own question with its own reading. Old Q4.4 (written) is now Q4.5.
+
 - **Q4.1** Write `motif_rate(seq, motif)` = number of **overlapping** occurrences of
-  `motif` per 100 residues. Students must handle overlap themselves
-  (`"PQPQ"` contains `"PQ"` twice; `str.count` gets non-overlapping only — for `"PQ"` that
-  happens to match, so **test with `motif="QQ"` on `"QQQ"`**, which must give 2, not 1).
-- **Q4.2** Add a `pq_motif` column = `motif_rate(seq, "PQ")`.
-- **Q4.3** Group means of `pq_motif` by `gluten`, and by `grain`.
-  *Answer: gluten ≈ 6.0 vs 0.5 per 100; maize and sorghum drop to ≈ 0.8 — now with the safe
-  grains, not between.*
-- **Q4.4** *(written)* Why is a repeat-dipeptide rate more *specific* to true gluten than
+  `motif` per 100 residues, walking the positions rather than using `str.count`.
+  **This is the one question in Part 4 where the check is load-bearing.** For `"PQ"`, copies
+  can never overlap (different letters), so `str.count` returns *identical values on all 251
+  proteins* — verified. A student who uses it gets every downstream number right and never
+  finds out. `check_q4_1` therefore tests the function directly, with `"QQ"` on `"QQQ"` (must
+  give 2, not 1). The test cases are deliberately **ordered non-overlapping first**, so a
+  forgotten `/len` or `*100` is reported as a scaling error; the overlap-specific hint only
+  appears once scaling is known good. Tested against `str.count`, a missing `*100`, a missing
+  divide, and an off-by-one on the last position.
+- **Q4.2** Add a `pq_motif` column = `motif_rate(seq, "PQ")`. Students write a one-argument
+  `pq_motif_rate(seq)` helper first, since `apply` passes only the column value and cannot
+  supply the motif.
+- **Q4.3** `motif_means`: mean `pq_frac` **and** mean `pq_motif` by `gluten` — both columns,
+  so the two features sit side by side. *Answer: gluten 0.468 / 6.05, non-gluten 0.180 / 0.47.*
+  The follow-up asks students to compare as **ratios** (≈ 2.6× on `pq_frac`, ≈ 13× on
+  `pq_motif`), since the two features are in different units and a difference is meaningless.
+- **Q4.4** `motif_by_grain`: the same two columns per `grain`, sorted by mean `pq_motif`
+  descending. *Answer: rye 11.41, barley 7.94, wheat 5.03, then oat 1.49, sorghum 0.83, maize
+  0.78, buckwheat 0.42, quinoa 0.30, foxtail millet 0.17, rice 0.17.* This is Q2.4's table
+  with one column added and it is the payoff of the part: maize and sorghum go from stranded
+  between the groups on `pq_frac` (0.27, 0.26 vs 0.47 and 0.12–0.14) to sitting with the safe
+  grains on `pq_motif`. The reading note calls out **oat as the honest exception** — it only
+  falls to 1.5, still several times the safe grains, which is real biology rather than a
+  defect, and it sets up the two oat avenins in the Part 5 mystery set.
+- **Q4.5** *(written)* Why is a repeat-dipeptide rate more *specific* to true gluten than
   the P+Q fraction? *Answer: zein/kafirin are P/Q-rich but their residues are not in tandem
   `PQ` repeats; the immunogenic gluten peptides come precisely from long `...PQ-PQ-PQ...`
-  repeat tracts, so the motif rate captures arrangement, not just amount.*
+  repeat tracts, so the motif rate captures arrangement, not just amount.* The question
+  defines **specific** first — a feature whose high values really do mean the thing you care
+  about — because the word is doing real work and students will not have met it this way.
 
 ## Part 5 — Prediction
 
