@@ -34,6 +34,8 @@ STAGE = DIST / "_staging"
 
 STUDENT_NOTEBOOKS = ["project_datascience.ipynb", "project_pandas.ipynb"]
 SOLUTION_NOTEBOOKS = ["solutions_datascience.ipynb", "solutions_pandas.ipynb"]
+# Generated, and needed at runtime beside the notebooks - not source/ material.
+CHECKS_MODULES = ["checks_datascience.py", "checks_pandas.py"]
 STUDENT_DATA = ["grains.csv", "grains_mystery.csv"]
 INSTRUCTOR_ONLY_DATA = ["grains_mystery_key.csv"]
 SOURCE_FILES = ["build_dataset.py", "build_notebooks.py", "rebuild.sh", "package.py"]
@@ -79,7 +81,7 @@ def execute_solutions(into: Path) -> list[str]:
 
 def build_student_tree(root: Path) -> None:
     root.mkdir(parents=True, exist_ok=True)
-    for name in STUDENT_NOTEBOOKS:
+    for name in STUDENT_NOTEBOOKS + CHECKS_MODULES:
         shutil.copy2(HERE / name, root / name)
     shutil.copy2(HERE / "datascience_vs_pandas.md", root / "datascience_vs_pandas.md")
     data = root / "data"
@@ -92,7 +94,7 @@ def build_student_tree(root: Path) -> None:
 
 def build_module_tree(root: Path, skip_execute: bool) -> list[str]:
     root.mkdir(parents=True, exist_ok=True)
-    for name in STUDENT_NOTEBOOKS:
+    for name in STUDENT_NOTEBOOKS + CHECKS_MODULES:
         shutil.copy2(HERE / name, root / name)
     shutil.copy2(HERE / "datascience_vs_pandas.md", root / "datascience_vs_pandas.md")
 
@@ -218,6 +220,7 @@ Keep this bundle for yourself. It additionally contains the worked solutions and
 | `project_pandas.ipynb` | student notebook, `pandas` |
 | `solutions_datascience.ipynb` | worked solutions, saved with their outputs |
 | `solutions_pandas.ipynb` | worked solutions, saved with their outputs |
+| `checks_*.py` | the `check_` helpers the notebooks import. Generated; holds expected answers |
 | `datascience_vs_pandas.md` | side-by-side reference for every operation the project uses |
 | `data/` | the dataset (see below) |
 | `source/` | scripts that regenerate everything, if the module ever needs editing |
@@ -243,8 +246,13 @@ jupyter notebook
 Then open whichever notebook you want. Run the cells in order from the top — later cells
 depend on variables set by earlier ones.
 
-**Keep the `data/` folder next to the notebooks.** The notebooks load `data/grains.csv` by
-relative path, so moving a notebook out of this folder on its own will break it.
+**Keep the `data/` folder and the `checks_*.py` files next to the notebooks.** The notebooks
+load `data/grains.csv` by relative path and import their checks from the matching module, so
+moving a notebook out of this folder on its own will break it.
+
+The checks were pulled out of the notebook deliberately. Inline they ran to 260 lines a
+student had to scroll past before the first question, and the hints quote expected answers.
+Out here they still work exactly the same and are no longer in the way.
 
 If local installation is not an option, the notebooks will run in Google Colab, but you have
 to upload the `data/` folder alongside the notebook and run `!pip install datascience` in the
@@ -301,8 +309,9 @@ jupyter notebook
 Then open your notebook and run the cells in order from the top. Later cells use variables
 that earlier ones create, so skipping around will give you errors that are not your fault.
 
-**Keep the `data/` folder next to the notebook.** The first cell loads `data/grains.csv`
-using a relative path.
+**Keep the `data/` folder and the `checks_*.py` files next to the notebook.** The notebook
+loads `data/grains.csv` by relative path, and the setup cell imports its checks from the
+matching `checks_` file. Move the notebook somewhere on its own and neither will be found.
 
 ## The checks
 

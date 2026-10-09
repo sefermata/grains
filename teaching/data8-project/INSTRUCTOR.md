@@ -48,9 +48,20 @@ Classification, etc.), not the weekly labs. Each part has a short narrative, num
 questions, some starter code, and written-answer cells. Roughly 60% code the student writes
 with a function signature or one line of scaffolding given, 40% they structure themselves.
 
-Lightweight self-checks are inline (`check_q1_2()` prints ✓ / a hint) so the notebook works
-without `otter-grader`. To convert to otter: move each `check_*` body into a `tests/qN_M.py`
-file and replace the calls with `grader.check("qN_M")`.
+Lightweight self-checks run after every question (`check_q1_2()` prints `OK` / a hint) so the
+notebook works without `otter-grader`.
+
+**The checks live in a generated module, not in a cell** (2026-10-08). `build_notebooks.py`
+writes `checks_datascience.py` and `checks_pandas.py` beside the notebooks, and the setup cell
+is one line: `from checks_datascience import *`. Inline they were 266 lines and 13 KB that a
+student scrolled past before question 0.1, and the hints necessarily quote expected answers —
+`0.468` and `0.180` for Q2.3, the grain ordering for Q2.4 and Q4.4 — which is not something to
+leave open in the student's own notebook. This is not security: the file ships with the
+notebook and anyone can open it, and it says so at the top. It just stops the answers being
+the first thing in view. Notebook size dropped ~50 KB → 37 KB; lines before Q0.1, 358 → 92.
+
+This also lands the module most of the way to `otter-grader`: each `check_*` body moves to a
+`tests/qN_M.py` file and the calls become `grader.check("qN_M")`.
 
 ## Timing
 
