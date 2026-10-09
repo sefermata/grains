@@ -1608,7 +1608,7 @@ def part4(track: str, version: str) -> list[dict]:
         prolamins too, so they really are rich in P and Q, and any rule built on `pq_frac`
         alone has to either miss some gluten or wrongly flag them.
 
-        So the problem is not the threshold. It's the feature. `pq_frac` counts **how much** P
+        So the problem is not the threshold, tt's the feature. `pq_frac` counts **how much** P
         and Q a protein has and ignores **how they are arranged** — and arrangement is where
         gluten is actually distinctive. The immune-triggering stretches of gluten are built
         from tandem repeats, long runs of `...PQPQPQ...`, while maize and sorghum carry their
@@ -1627,8 +1627,8 @@ def part4(track: str, version: str) -> list[dict]:
         proteins comparable — and the ×100 just keeps the numbers readable.
 
         **Count overlapping copies separately.** This is the part worth slowing down on. The
-        string `'QQQ'` contains `'QQ'` **twice**: once starting at position 0, once at position
-        1. They share a letter, and both count.
+        string `'QQQ'` contains `'QQ'` **twice**: once starting at position 0, once starting at
+        position 1. They share a letter, and both count.
 
         Python's built-in `'QQQ'.count('QQ')` returns **1**, because `str.count` skips past
         each match it finds. So you cannot use it here — walk the positions yourself and check

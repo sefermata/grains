@@ -44,3 +44,6 @@ results/structures/
 # part, kept for taking notes. build_notebooks.py is the source; these are throwaway.
 teaching/data8-project/project_datascience-Copy1.ipynb
 teaching/data8-project/*draft*.ipynb
+
+# Delivery bundles - rebuild with teaching/data8-project/package.py
+teaching/data8-project/dist/
